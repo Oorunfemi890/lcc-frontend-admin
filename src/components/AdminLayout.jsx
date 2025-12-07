@@ -52,16 +52,57 @@ const AdminLayout = () => {
       permission: "celebrations",
     },
     {
+      path: "/first-timers",
+      icon: "ri-user-add-line",
+      label: "First Timers",
+      permission: "first_timers",
+    },
+    {
+      path: "/follow-up",
+      icon: "ri-chat-follow-up-line",
+      label: "Follow Up",
+      permission: "follow_up",
+    },
+    {
+      path: "/testimonies",
+      icon: "ri-feedback-line",
+      label: "Testimonies",
+      permission: "testimonies",
+    },
+    {
+      path: "/services",
+      icon: "ri-service-line",
+      label: "Services",
+      permission: "services",
+    },
+    {
       path: "/profile",
       icon: "ri-user-settings-line",
       label: "Profile",
       permission: "all",
     },
+    {
+      path: "/admin-management",
+      icon: "ri-admin-line",
+      label: "Admin Management",
+      permission: "admin_management",
+      roles: ["SUPER_ADMIN", "ADMIN"], // Only visible to SUPER_ADMIN and ADMIN
+    },
   ];
 
   const filteredSidebarItems = sidebarItems.filter((item) => {
     if (item.permission === "all") return true;
-    if (admin?.role === "super_admin") return true;
+
+    // Check for super admin role (case insensitive)
+    const role = admin?.role?.toUpperCase();
+    if (role === "SUPER_ADMIN") return true;
+
+    // Check role-based access if specified
+    if (item.roles) {
+      return item.roles.includes(role);
+    }
+
+    // Check permissions array
     return admin?.permissions?.includes(item.permission);
   });
 
@@ -79,12 +120,11 @@ const AdminLayout = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 flex flex-col w-64 bg-white border-r border-gray-200 transform z-50 md:relative md:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-200 ease-in-out`}
+        className={`fixed inset-y-0 left-0 flex flex-col w-64 bg-white border-r border-gray-200 transform z-50 md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } transition-transform duration-200 ease-in-out`}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-4 bg-blue-600 text-white flex-shrink-0">
+        <div className="flex items-center justify-between h-16 px-4 bg-indigo-600 text-white flex-shrink-0">
           <Link to="/" className="flex items-center">
             <img src="/img/favicon.png" alt="RCCG Logo" className="h-8 w-8" />
             <span className="ml-2 text-lg font-semibold">RCCG LCC</span>
@@ -104,18 +144,16 @@ const AdminLayout = () => {
               key={item.path}
               to={item.path}
               onClick={() => setSidebarOpen(false)}
-              className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                isActive(item.path)
-                  ? "bg-blue-100 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+              className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${isActive(item.path)
+                ? "bg-indigo-100 text-indigo-700"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
             >
               <i
-                className={`${item.icon} mr-3 text-lg ${
-                  isActive(item.path)
-                    ? "text-blue-700"
-                    : "text-gray-400 group-hover:text-gray-500"
-                }`}
+                className={`${item.icon} mr-3 text-lg ${isActive(item.path)
+                  ? "text-indigo-700"
+                  : "text-gray-400 group-hover:text-gray-500"
+                  }`}
               ></i>
               {item.label}
             </Link>
@@ -133,8 +171,8 @@ const AdminLayout = () => {
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (
-                <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <i className="ri-user-line text-blue-600"></i>
+                <div className="h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <i className="ri-user-line text-indigo-600"></i>
                 </div>
               )}
             </div>
@@ -155,10 +193,16 @@ const AdminLayout = () => {
         {/* Top navigation */}
         <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
           <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 h-16">
-            {/* Mobile menu button */}
+            {/* Sidebar toggle button */}
             <button
-              onClick={() => setSidebarOpen(true)}
-              className="md:hidden -ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="px-4 text-gray-500 focus:outline-none focus:bg-gray-100 focus:text-gray-600 md:hidden"
+            >
+              <i className="ri-menu-2-line text-2xl"></i>
+            </button>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="hidden md:inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
             >
               <i className="ri-menu-line text-xl"></i>
             </button>

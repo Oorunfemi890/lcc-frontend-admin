@@ -25,7 +25,7 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       const [statsResponse, activitiesResponse, eventsResponse] = await Promise.all([
         dashboardAPI.getStats(),
         dashboardAPI.getRecentActivities(),
@@ -37,11 +37,27 @@ const AdminDashboard = () => {
       }
 
       if (activitiesResponse.success) {
-        setRecentActivities(activitiesResponse.data);
+        // Map backend activity format to frontend display format
+        const mappedActivities = activitiesResponse.data.map(activity => ({
+          ...activity,
+          description: activity.title,
+          createdAt: activity.time,
+          icon: activity.type === 'member' ? 'ri-user-add-line' : 'ri-calendar-event-line',
+          iconBg: activity.type === 'member' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+        }));
+        setRecentActivities(mappedActivities);
       }
 
       if (eventsResponse.success) {
-        setUpcomingEvents(eventsResponse.data);
+        // Map backend program format to frontend event format
+        const mappedEvents = eventsResponse.data.map(event => ({
+          ...event,
+          title: event.name || event.title,
+          date: event.startDate || event.date,
+          time: event.startTime || event.time,
+          status: event.status || 'upcoming'
+        }));
+        setUpcomingEvents(mappedEvents);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -93,10 +109,10 @@ const AdminDashboard = () => {
             <div className="text-right">
               <p className="text-blue-100 text-sm">Today</p>
               <p className="text-xl font-semibold">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric'
                 })}
               </p>
             </div>
@@ -134,8 +150,8 @@ const AdminDashboard = () => {
               <p className="text-sm font-medium text-gray-600">This Week</p>
               <p className="text-2xl font-bold text-gray-900">{stats.thisWeekAttendance}</p>
             </div>
-            <Link 
-              to="/attendance" 
+            <Link
+              to="/attendance"
               className="text-green-600 hover:text-green-700 text-sm font-medium"
             >
               View All
@@ -153,8 +169,8 @@ const AdminDashboard = () => {
               <p className="text-sm font-medium text-gray-600">Upcoming Events</p>
               <p className="text-2xl font-bold text-gray-900">{stats.upcomingEvents}</p>
             </div>
-            <Link 
-              to="/events" 
+            <Link
+              to="/events"
               className="text-purple-600 hover:text-purple-700 text-sm font-medium"
             >
               Manage
@@ -172,8 +188,8 @@ const AdminDashboard = () => {
               <p className="text-sm font-medium text-gray-600">Pending Celebrations</p>
               <p className="text-2xl font-bold text-gray-900">{stats.pendingCelebrations}</p>
             </div>
-            <Link 
-              to="/celebrations" 
+            <Link
+              to="/celebrations"
               className="text-yellow-600 hover:text-yellow-700 text-sm font-medium"
             >
               Review
@@ -203,14 +219,14 @@ const AdminDashboard = () => {
             </div>
             <p className="text-sm font-medium text-gray-600 mb-3">Quick Actions</p>
             <div className="space-y-2">
-              <Link 
-                to="/attendance/new" 
+              <Link
+                to="/attendance/new"
                 className="block w-full bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700 transition-colors"
               >
                 Record Attendance
               </Link>
-              <Link 
-                to="/events/new" 
+              <Link
+                to="/events/new"
                 className="block w-full bg-green-600 text-white py-2 px-3 rounded text-sm hover:bg-green-700 transition-colors"
               >
                 Create Event
@@ -258,8 +274,8 @@ const AdminDashboard = () => {
               <i className="ri-calendar-event-line mr-2 text-gray-500"></i>
               Upcoming Events
             </h2>
-            <Link 
-              to="/events" 
+            <Link
+              to="/events"
               className="text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
               View All
@@ -283,11 +299,10 @@ const AdminDashboard = () => {
                           {event.location}
                         </p>
                       </div>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        event.status === 'upcoming' ? 'bg-green-100 text-green-800' :
-                        event.status === 'ongoing' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${event.status === 'upcoming' ? 'bg-green-100 text-green-800' :
+                          event.status === 'ongoing' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                        }`}>
                         {event.status}
                       </span>
                     </div>
@@ -305,29 +320,29 @@ const AdminDashboard = () => {
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link 
-            to="/members" 
+          <Link
+            to="/members"
             className="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
           >
             <i className="ri-group-line text-blue-600 text-xl mr-3"></i>
             <span className="text-sm font-medium text-blue-900">Members</span>
           </Link>
-          <Link 
-            to="/attendance" 
+          <Link
+            to="/attendance"
             className="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
           >
             <i className="ri-calendar-check-line text-green-600 text-xl mr-3"></i>
             <span className="text-sm font-medium text-green-900">Attendance</span>
           </Link>
-          <Link 
-            to="/events" 
+          <Link
+            to="/events"
             className="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
           >
             <i className="ri-calendar-event-line text-purple-600 text-xl mr-3"></i>
             <span className="text-sm font-medium text-purple-900">Events</span>
           </Link>
-          <Link 
-            to="/celebrations" 
+          <Link
+            to="/celebrations"
             className="flex items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
           >
             <i className="ri-cake-3-line text-yellow-600 text-xl mr-3"></i>

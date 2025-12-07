@@ -5,7 +5,7 @@ export const membersAPI = {
   // Get all members
   getMembers: async (filters = {}) => {
     try {
-      const response = await apiClient.get('/members', { params: filters });
+      const response = await apiClient.get('/member', { params: filters });
       return {
         success: true,
         data: response.data.data,
@@ -22,7 +22,7 @@ export const membersAPI = {
   // Get member by ID
   getMemberById: async (id) => {
     try {
-      const response = await apiClient.get(`/members/${id}`);
+      const response = await apiClient.get(`/member/${id}`);
       return {
         success: true,
         data: response.data.data,
@@ -39,7 +39,7 @@ export const membersAPI = {
   // Add new member
   addMember: async (memberData) => {
     try {
-      const response = await apiClient.post('/members', memberData);
+      const response = await apiClient.post('/member', memberData);
       return {
         success: true,
         data: response.data.data,
@@ -56,7 +56,7 @@ export const membersAPI = {
   // Update member
   updateMember: async (id, memberData) => {
     try {
-      const response = await apiClient.put(`/members/${id}`, memberData);
+      const response = await apiClient.put(`/member/${id}`, memberData);
       return {
         success: true,
         data: response.data.data,
@@ -73,7 +73,7 @@ export const membersAPI = {
   // Update member status (active/inactive)
   updateMemberStatus: async (id, status) => {
     try {
-      const response = await apiClient.patch(`/members/${id}/status`, { isActive: status });
+      const response = await apiClient.patch(`/member/${id}/status`, { isActive: status });
       return {
         success: true,
         data: response.data.data,
@@ -90,7 +90,7 @@ export const membersAPI = {
   // Delete member (soft delete - set inactive)
   deleteMember: async (id) => {
     try {
-      await apiClient.delete(`/members/${id}`);
+      await apiClient.delete(`/member/${id}`);
       return {
         success: true,
         message: 'Member deleted successfully'
@@ -106,7 +106,7 @@ export const membersAPI = {
   // Get member statistics
   getMemberStats: async () => {
     try {
-      const response = await apiClient.get('/members/stats');
+      const response = await apiClient.get('/member/stats');
       return {
         success: true,
         data: response.data.data,
@@ -123,7 +123,7 @@ export const membersAPI = {
   // Search members
   searchMembers: async (query) => {
     try {
-      const response = await apiClient.get(`/members/search?q=${encodeURIComponent(query)}`);
+      const response = await apiClient.get(`/member/search?q=${encodeURIComponent(query)}`);
       return {
         success: true,
         data: response.data.data,
@@ -140,7 +140,7 @@ export const membersAPI = {
   // Get departments list
   getDepartments: async () => {
     try {
-      const response = await apiClient.get('/members/departments');
+      const response = await apiClient.get('/member/departments');
       return {
         success: true,
         data: response.data.data,
@@ -160,7 +160,7 @@ export const membersAPI = {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await apiClient.post('/members/import', formData, {
+      const response = await apiClient.post('/member/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -190,7 +190,7 @@ export const membersAPI = {
   // Export members to CSV/Excel
   exportMembers: async (format = 'csv', filters = {}) => {
     try {
-      const response = await apiClient.get('/members/export', {
+      const response = await apiClient.get('/member/export', {
         params: { format, ...filters },
         responseType: 'blob',
       });

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { attendanceAPI } from '@/Services/attendanceAPI';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const AttendanceManagement = () => {
+  const { admin } = useAuth();
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -16,7 +18,7 @@ const AttendanceManagement = () => {
     hasPrevPage: false,
     limit: 10
   });
-  
+
   const [filters, setFilters] = useState({
     page: 1,
     limit: 10,
@@ -35,6 +37,12 @@ const AttendanceManagement = () => {
     lowestAttendance: 0
   });
 
+  // Role-based permissions
+  const canView = true; // All roles can view
+  const canEdit = ['SUPER_ADMIN', 'ADMIN', 'EDITOR'].includes(admin?.role);
+  const canDelete = admin?.role === 'SUPER_ADMIN';
+  const canCreate = ['SUPER_ADMIN', 'ADMIN'].includes(admin?.role);
+
   useEffect(() => {
     fetchAttendanceRecords();
     fetchAttendanceStats();
@@ -43,8 +51,8 @@ const AttendanceManagement = () => {
   const fetchAttendanceRecords = async () => {
     try {
       setLoading(true);
-      const response = await attendanceAPI.getAttendanceRecords(filters);
-      
+      const response = await attendanceAPI.getAll(filters);
+
       if (response.success) {
         setAttendanceRecords(response.data);
         if (response.pagination) {
@@ -66,7 +74,7 @@ const AttendanceManagement = () => {
   const fetchAttendanceStats = async () => {
     try {
       const response = await attendanceAPI.getAttendanceStats('month');
-      
+
       if (response.success) {
         setStats({
           totalRecords: response.data.totalRecords || 0,
@@ -84,7 +92,7 @@ const AttendanceManagement = () => {
   const handleViewDetails = async (recordId) => {
     try {
       const response = await attendanceAPI.getAttendanceById(recordId);
-      
+
       if (response.success) {
         setSelectedRecord(response.data);
         setShowDetails(true);
@@ -104,11 +112,11 @@ const AttendanceManagement = () => {
 
     try {
       const response = await attendanceAPI.deleteAttendance(recordId);
-      
+
       if (response.success) {
         setAttendanceRecords(prev => prev.filter(record => record.id !== recordId));
         toast.success('Attendance record deleted successfully');
-        
+
         // Refresh the data to update pagination
         await fetchAttendanceRecords();
         await fetchAttendanceStats();
@@ -155,7 +163,7 @@ const AttendanceManagement = () => {
       };
 
       const response = await attendanceAPI.generateReport(reportFilters);
-      
+
       if (response.success) {
         toast.success(response.message);
       } else {
@@ -365,7 +373,7 @@ const AttendanceManagement = () => {
             </select>
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -375,12 +383,6 @@ const AttendanceManagement = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Total Attendance
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Breakdown
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Recorded By
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -401,20 +403,6 @@ const AttendanceManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-lg font-bold text-blue-600">
                       {record.totalAttendance}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <div>Adults: {record.adults || 0}</div>
-                      <div>Youth: {record.youth || 0}</div>
-                      <div>Children: {record.children || 0}</div>
-                      <div>Visitors: {record.visitors || 0}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{record.recordedBy}</div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(record.createdAt).toLocaleDateString()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -473,7 +461,7 @@ const AttendanceManagement = () => {
                 >
                   Previous
                 </button>
-                
+
                 {/* Page Numbers */}
                 <div className="flex items-center space-x-1">
                   {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
@@ -486,24 +474,23 @@ const AttendanceManagement = () => {
                       pageNum = start + i;
                       if (pageNum > end) return null;
                     }
-                    
+
                     return (
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
                         disabled={loading}
-                        className={`px-3 py-2 text-sm font-medium rounded-md ${
-                          pageNum === pagination.currentPage
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`px-3 py-2 text-sm font-medium rounded-md ${pageNum === pagination.currentPage
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {pageNum}
                       </button>
                     );
                   })}
                 </div>
-                
+
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={!pagination.hasNextPage || loading}
@@ -554,7 +541,7 @@ const AttendanceManagement = () => {
                   <i className="ri-close-line text-xl"></i>
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Service Information */}
                 <div className="space-y-4">
@@ -621,9 +608,8 @@ const AttendanceManagement = () => {
                         {selectedRecord.members.map((member, index) => (
                           <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
                             <div className="flex items-center">
-                              <div className={`w-3 h-3 rounded-full mr-3 ${
-                                member.present ? 'bg-green-500' : 'bg-red-500'
-                              }`}></div>
+                              <div className={`w-3 h-3 rounded-full mr-3 ${member.present ? 'bg-green-500' : 'bg-red-500'
+                                }`}></div>
                               <div>
                                 <span className="text-sm font-medium text-gray-900">{member.name}</span>
                                 {member.department && (
@@ -649,7 +635,7 @@ const AttendanceManagement = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-3 pt-6 mt-6 border-t">
                 <Link
                   to={`/attendance/${selectedRecord.id}/edit`}

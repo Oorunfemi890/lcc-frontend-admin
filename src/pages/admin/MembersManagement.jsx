@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { membersAPI } from '@/Services/membersAPI';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const MembersManagement = () => {
+  const { admin } = useAuth();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +17,12 @@ const MembersManagement = () => {
 
   const membersPerPage = 10;
 
+  // Role-based permissions
+  const canView = true; // All roles can view
+  const canEdit = ['SUPER_ADMIN', 'ADMIN', 'EDITOR'].includes(admin?.role);
+  const canDelete = admin?.role === 'SUPER_ADMIN';
+  const canCreate = ['SUPER_ADMIN', 'ADMIN'].includes(admin?.role);
+
   useEffect(() => {
     fetchMembers();
   }, []);
@@ -23,7 +31,7 @@ const MembersManagement = () => {
     try {
       setLoading(true);
       const response = await membersAPI.getMembers();
-      
+
       if (response.success) {
         setMembers(response.data);
       } else {
@@ -40,7 +48,7 @@ const MembersManagement = () => {
   const handleMemberClick = async (memberId) => {
     try {
       const response = await membersAPI.getMemberById(memberId);
-      
+
       if (response.success) {
         setSelectedMember(response.data);
         setShowMemberDetails(true);
@@ -56,10 +64,10 @@ const MembersManagement = () => {
   const handleStatusChange = async (memberId, newStatus) => {
     try {
       const response = await membersAPI.updateMemberStatus(memberId, newStatus);
-      
+
       if (response.success) {
-        setMembers(prev => 
-          prev.map(member => 
+        setMembers(prev =>
+          prev.map(member =>
             member.id === memberId ? { ...member, isActive: newStatus } : member
           )
         );
@@ -75,16 +83,18 @@ const MembersManagement = () => {
 
   // Filter and search logic
   const filteredMembers = members.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.phone.includes(searchTerm);
-    
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'active' && member.isActive) ||
-                         (filterStatus === 'inactive' && !member.isActive);
-    
-    const matchesDepartment = filterDepartment === 'all' || member.department === filterDepartment;
-    
+    const matchesSearch =
+      (member.firstName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (member.lastName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (member.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (member.phoneNumber?.includes(searchTerm));
+
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'active' && member.active) ||
+      (filterStatus === 'inactive' && !member.active);
+
+    const matchesDepartment = filterDepartment === 'all' || member.membershipType === filterDepartment;
+
     return matchesSearch && matchesStatus && matchesDepartment;
   });
 
@@ -246,7 +256,7 @@ const MembersManagement = () => {
             Members ({filteredMembers.length})
           </h2>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -255,13 +265,7 @@ const MembersManagement = () => {
                   Member
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Department
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Joined
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -292,21 +296,13 @@ const MembersManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{member.email}</div>
-                    <div className="text-sm text-gray-500">{member.phone}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{member.department}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(member.membershipDate)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      member.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${member.isActive
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                      }`}>
                       {member.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -391,11 +387,10 @@ const MembersManagement = () => {
                       <button
                         key={i + 1}
                         onClick={() => setCurrentPage(i + 1)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === i + 1
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1
+                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
                       >
                         {i + 1}
                       </button>
@@ -429,7 +424,7 @@ const MembersManagement = () => {
                   <i className="ri-close-line text-xl"></i>
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="text-center">
                   {selectedMember.avatar ? (
@@ -442,7 +437,7 @@ const MembersManagement = () => {
                   <h4 className="mt-2 text-lg font-semibold text-gray-900">{selectedMember.name}</h4>
                   <p className="text-sm text-gray-500">{selectedMember.position || selectedMember.occupation}</p>
                 </div>
-                
+
                 <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="text-sm font-medium text-gray-500">Email</label>
@@ -468,16 +463,15 @@ const MembersManagement = () => {
                   )}
                   <div>
                     <label className="text-sm font-medium text-gray-500">Status</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      selectedMember.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${selectedMember.isActive
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                      }`}>
                       {selectedMember.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-3 pt-4">
                   <Link
                     to={`/members/${selectedMember.id}/edit`}

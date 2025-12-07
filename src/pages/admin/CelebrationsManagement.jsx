@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { celebrationsAPI } from '@/Services/celebrationsAPI';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWebSocket, useRealtimeData } from '@/contexts/WebSocketContext';
 import { toast } from 'react-toastify';
 
 const CelebrationsManagement = () => {
   const { admin } = useAuth();
-  const { isConnected } = useWebSocket();
-  const lastUpdate = useRealtimeData('celebrations');
-  
+
   const [celebrations, setCelebrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,13 +21,6 @@ const CelebrationsManagement = () => {
   const [showBulkActions, setShowBulkActions] = useState(false);
 
   const celebrationsPerPage = 12;
-
-  // Reload data when realtime update occurs
-  useEffect(() => {
-    if (lastUpdate) {
-      fetchCelebrations();
-    }
-  }, [lastUpdate]);
 
   useEffect(() => {
     fetchCelebrations();
@@ -48,9 +38,9 @@ const CelebrationsManagement = () => {
         memberType: filterSource,
         search: searchTerm
       };
-      
+
       const response = await celebrationsAPI.getCelebrations(filters);
-      
+
       if (response.success) {
         setCelebrations(response.data || []);
       } else {
@@ -88,7 +78,7 @@ const CelebrationsManagement = () => {
   const handleViewDetails = async (celebrationId) => {
     try {
       const response = await celebrationsAPI.getCelebrationById(celebrationId);
-      
+
       if (response.success) {
         setSelectedCelebration(response.data);
         setShowDetails(true);
@@ -103,22 +93,22 @@ const CelebrationsManagement = () => {
 
   const handleStatusChange = async (celebrationId, newStatus, rejectionReason = null) => {
     try {
-      const updateData = { 
+      const updateData = {
         status: newStatus,
         rejectionReason: newStatus === 'rejected' ? rejectionReason : null
       };
 
       const response = await celebrationsAPI.updateCelebrationStatus(celebrationId, updateData);
-      
+
       if (response.success) {
-        setCelebrations(prev => 
-          prev.map(celebration => 
-            celebration.id === celebrationId 
+        setCelebrations(prev =>
+          prev.map(celebration =>
+            celebration.id === celebrationId
               ? { ...celebration, status: newStatus, ...updateData }
               : celebration
           )
         );
-        
+
         toast.success(`Celebration ${newStatus} successfully`);
         fetchStats(); // Refresh stats
       } else {
@@ -144,7 +134,7 @@ const CelebrationsManagement = () => {
     const pendingCelebrations = celebrations
       .filter(c => c.status === 'pending')
       .map(c => c.id);
-    
+
     if (selectedCelebrations.length === pendingCelebrations.length) {
       setSelectedCelebrations([]);
     } else {
@@ -155,16 +145,16 @@ const CelebrationsManagement = () => {
   // Filter and search logic
   const filteredCelebrations = celebrations.filter(celebration => {
     const matchesSearch = celebration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         celebration.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (celebration.phone && celebration.phone.includes(searchTerm)) ||
-                         (celebration.email && celebration.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+      celebration.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (celebration.phone && celebration.phone.includes(searchTerm)) ||
+      (celebration.email && celebration.email.toLowerCase().includes(searchTerm.toLowerCase()));
+
     const matchesStatus = filterStatus === 'all' || celebration.status === filterStatus;
     const matchesType = filterType === 'all' || celebration.type === filterType;
-    const matchesSource = filterSource === 'all' || 
-                         (filterSource === 'member' && celebration.isFromMember) ||
-                         (filterSource === 'public' && !celebration.isFromMember);
-    
+    const matchesSource = filterSource === 'all' ||
+      (filterSource === 'member' && celebration.isFromMember) ||
+      (filterSource === 'public' && !celebration.isFromMember);
+
     return matchesSearch && matchesStatus && matchesType && matchesSource;
   });
 
@@ -248,15 +238,9 @@ const CelebrationsManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">Celebrations Management</h1>
           <p className="text-gray-600 mt-1">
             Review and manage member & public celebration requests
-            {isConnected && (
-              <span className="ml-2 inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                <i className="ri-wifi-line mr-1"></i>
-                Live Updates
-              </span>
-            )}
           </p>
         </div>
-        
+
         {/* Export Button */}
         <div className="mt-4 sm:mt-0">
           <button
@@ -282,7 +266,7 @@ const CelebrationsManagement = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
@@ -294,7 +278,7 @@ const CelebrationsManagement = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -306,7 +290,7 @@ const CelebrationsManagement = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-red-100 rounded-lg">
@@ -318,7 +302,7 @@ const CelebrationsManagement = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
@@ -330,7 +314,7 @@ const CelebrationsManagement = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-gray-100 rounded-lg">
@@ -360,7 +344,7 @@ const CelebrationsManagement = () => {
               <i className="ri-search-line absolute left-3 top-3 text-gray-400"></i>
             </div>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
@@ -374,7 +358,7 @@ const CelebrationsManagement = () => {
               <option value="rejected">Rejected</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
             <select
@@ -388,7 +372,7 @@ const CelebrationsManagement = () => {
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
             <select
@@ -401,7 +385,7 @@ const CelebrationsManagement = () => {
               <option value="public">Public</option>
             </select>
           </div>
-          
+
           <div className="flex items-end">
             <button
               onClick={() => {
@@ -459,7 +443,7 @@ const CelebrationsManagement = () => {
           <h2 className="text-lg font-semibold text-gray-900">
             Celebration Requests ({filteredCelebrations.length})
           </h2>
-          
+
           {pendingCount > 0 && (
             <div className="flex items-center space-x-4">
               <button
@@ -467,22 +451,22 @@ const CelebrationsManagement = () => {
                 className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
               >
                 <i className="ri-checkbox-multiple-line mr-1"></i>
-                {selectedCelebrations.length === celebrations.filter(c => c.status === 'pending').length 
-                  ? 'Deselect All' 
+                {selectedCelebrations.length === celebrations.filter(c => c.status === 'pending').length
+                  ? 'Deselect All'
                   : 'Select All Pending'
                 }
               </button>
             </div>
           )}
         </div>
-        
+
         {filteredCelebrations.length === 0 ? (
           <div className="text-center py-12">
             <i className="ri-cake-3-line text-gray-400 text-4xl mb-4"></i>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No celebration requests found</h3>
             <p className="text-gray-500">
-              {celebrations.length === 0 
-                ? "No celebration requests have been submitted yet." 
+              {celebrations.length === 0
+                ? "No celebration requests have been submitted yet."
                 : "Try adjusting your search or filter criteria."
               }
             </p>
@@ -490,7 +474,7 @@ const CelebrationsManagement = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
             {filteredCelebrations.map((celebration) => (
-              <div 
+              <div
                 key={celebration.id}
                 className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
               >
@@ -542,10 +526,10 @@ const CelebrationsManagement = () => {
                   <div className="mb-3">
                     <div className="flex space-x-2">
                       {celebration.pictures.slice(0, 3).map((picture, index) => (
-                        <img 
+                        <img
                           key={index}
-                          src={picture} 
-                          alt={`Celebration ${index + 1}`} 
+                          src={picture}
+                          alt={`Celebration ${index + 1}`}
                           className="w-16 h-16 object-cover rounded border border-gray-200"
                         />
                       ))}
@@ -617,7 +601,7 @@ const CelebrationsManagement = () => {
                   <i className="ri-close-line text-xl"></i>
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
@@ -684,9 +668,9 @@ const CelebrationsManagement = () => {
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {selectedCelebration.pictures.map((picture, index) => (
                           <div key={index} className="relative group">
-                            <img 
-                              src={picture} 
-                              alt={`Celebration ${index + 1}`} 
+                            <img
+                              src={picture}
+                              alt={`Celebration ${index + 1}`}
                               className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-75"
                               onClick={() => window.open(picture, '_blank')}
                             />

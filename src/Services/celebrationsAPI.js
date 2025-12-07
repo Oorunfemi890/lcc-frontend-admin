@@ -5,7 +5,7 @@ export const celebrationsAPI = {
   // Get all celebrations
   getCelebrations: async (filters = {}) => {
     try {
-      const response = await apiClient.get('/celebrations', { params: filters });
+      const response = await apiClient.get('/celebrant', { params: filters });
       return {
         success: true,
         data: response.data.data,
@@ -22,7 +22,7 @@ export const celebrationsAPI = {
   // Get celebration by ID
   getCelebrationById: async (id) => {
     try {
-      const response = await apiClient.get(`/celebrations/${id}`);
+      const response = await apiClient.get(`/celebrant/${id}`);
       return {
         success: true,
         data: response.data.data,
@@ -39,7 +39,7 @@ export const celebrationsAPI = {
   // Create new celebration (from public form)
   createCelebration: async (celebrationData) => {
     try {
-      const response = await apiClient.post('/celebrations', celebrationData);
+      const response = await apiClient.post('/celebrant', celebrationData);
       return {
         success: true,
         data: response.data.data,
@@ -56,7 +56,7 @@ export const celebrationsAPI = {
   // Update celebration status
   updateCelebrationStatus: async (id, statusData) => {
     try {
-      const response = await apiClient.patch(`/celebrations/${id}/status`, statusData);
+      const response = await apiClient.patch(`/celebrant/${id}/status`, statusData);
       return {
         success: true,
         data: response.data.data,
@@ -73,7 +73,7 @@ export const celebrationsAPI = {
   // Delete celebration
   deleteCelebration: async (id) => {
     try {
-      await apiClient.delete(`/celebrations/${id}`);
+      await apiClient.delete(`/celebrant/${id}`);
       return {
         success: true,
         message: 'Celebration deleted successfully'
@@ -89,7 +89,7 @@ export const celebrationsAPI = {
   // Get celebration statistics
   getCelebrationsStats: async () => {
     try {
-      const response = await apiClient.get('/celebrations/stats');
+      const response = await apiClient.get('/celebrant/stats');
       return {
         success: true,
         data: response.data.data,
@@ -106,7 +106,7 @@ export const celebrationsAPI = {
   // Get upcoming celebrations (for acknowledgment)
   getUpcomingCelebrations: async (limit = 10) => {
     try {
-      const response = await apiClient.get(`/celebrations/upcoming?limit=${limit}`);
+      const response = await apiClient.get(`/celebrant/upcoming?limit=${limit}`);
       return {
         success: true,
         data: response.data.data,
@@ -123,7 +123,7 @@ export const celebrationsAPI = {
   // Export celebrations
   exportCelebrations: async (format = 'csv', filters = {}) => {
     try {
-      const response = await apiClient.get('/celebrations/export', {
+      const response = await apiClient.get('/celebrant/export', {
         params: { format, ...filters },
         responseType: 'blob'
       });

@@ -185,7 +185,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     window.addEventListener('auth:logout', handleAuthLogout);
-    
+
     return () => {
       window.removeEventListener('auth:logout', handleAuthLogout);
     };
@@ -197,6 +197,8 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: "CLEAR_ERROR" });
 
       const response = await authAPI.login(credentials);
+
+      console.log("response", response);
 
       if (response.success && response.data) {
         const admin = response.data.user || response.data.admin;
@@ -304,16 +306,16 @@ export const AuthProvider = ({ children }) => {
           type: "UPDATE_PROFILE",
           payload: updatedAdmin,
         });
-        
+
         dispatch({ type: "SET_PROFILE_UPDATE_STATUS", payload: 'verified' });
-        
+
         toast.success(response.message || "Profile updated successfully!");
-        
+
         // Clear status after a delay
         setTimeout(() => {
           dispatch({ type: "SET_PROFILE_UPDATE_STATUS", payload: null });
         }, 3000);
-        
+
         return { success: true, data: response.data };
       } else {
         const error = response.message || "Profile update failed";
@@ -328,13 +330,13 @@ export const AuthProvider = ({ children }) => {
         data: error.response?.data,
         message: error.message
       });
-      
+
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.error ||
         error.message ||
         "Profile update failed";
-      
+
       dispatch({ type: "SET_PROFILE_UPDATE_STATUS", payload: 'failed' });
       toast.error(errorMessage);
       return { success: false, message: errorMessage };
@@ -412,12 +414,12 @@ export const AuthProvider = ({ children }) => {
       if (response.success) {
         dispatch({ type: "SET_PASSWORD_CHANGE_STATUS", payload: 'verified' });
         toast.success(response.message || "Password changed successfully!");
-        
+
         // Clear tokens to force re-login with new password
         setTimeout(() => {
           logout(false);
         }, 2000);
-        
+
         return { success: true };
       } else {
         const error = response.message || "Password change failed";
@@ -480,24 +482,24 @@ export const AuthProvider = ({ children }) => {
   const refreshProfile = async () => {
     try {
       const response = await authAPI.getProfile();
-      
+
       if (response.success && response.data) {
         const updatedAdmin = response.data.admin || response.data.user;
-        
+
         dispatch({
           type: "UPDATE_PROFILE",
           payload: updatedAdmin,
         });
-        
+
         return { success: true, data: response.data };
       }
-      
+
       return { success: false, message: response.message };
     } catch (error) {
       console.error("Profile refresh failed:", error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || error.message || "Failed to refresh profile" 
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || "Failed to refresh profile"
       };
     }
   };

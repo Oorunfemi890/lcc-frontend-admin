@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { attendanceAPI } from '@/Services/attendanceAPI';
+import { membersAPI } from '@/Services/membersAPI';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const NewAttendance = () => {
   const navigate = useNavigate();
   const { admin } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     serviceType: '',
@@ -38,9 +39,9 @@ const NewAttendance = () => {
     const youth = parseInt(formData.youth) || 0;
     const children = parseInt(formData.children) || 0;
     const visitors = parseInt(formData.visitors) || 0;
-    
+
     const calculatedTotal = adults + youth + children + visitors;
-    
+
     if (calculatedTotal !== parseInt(formData.totalAttendance)) {
       setFormData(prev => ({
         ...prev,
@@ -50,20 +51,21 @@ const NewAttendance = () => {
   }, [formData.adults, formData.youth, formData.children, formData.visitors]);
 
   const fetchServiceTypes = async () => {
-    try {
-      const response = await attendanceAPI.getServiceTypes();
-      if (response.success) {
-        setServiceTypes(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching service types:', error);
-    }
+    // Hardcoded service types to match existing system
+    setServiceTypes([
+      'Sunday Service',
+      'Digging Deep',
+      'Faith Clinic',
+      'Church Without Walls',
+      'Thanksgiving Service',
+      'New Year Service'
+    ]);
   };
 
   const fetchMembers = async () => {
     try {
       setLoadingMembers(true);
-      const response = await attendanceAPI.getMembersForAttendance();
+      const response = await membersAPI.getMembers();
       if (response.success) {
         setAvailableMembers(response.data);
         // Initialize member attendance tracking
@@ -129,7 +131,7 @@ const NewAttendance = () => {
         recordedBy: admin?.name || 'Unknown'
       };
 
-      const response = await attendanceAPI.createAttendance(attendanceData);
+      const response = await attendanceAPI.create(attendanceData);
 
       if (response.success) {
         toast.success('Attendance recorded successfully!');
@@ -146,7 +148,9 @@ const NewAttendance = () => {
   };
 
   const filteredMembers = availableMembers.filter(member =>
-    member.name.toLowerCase().includes(memberSearchTerm.toLowerCase())
+    member.firstName?.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+    member.lastName?.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+    member.email?.toLowerCase().includes(memberSearchTerm.toLowerCase())
   );
 
   const presentCount = selectedMembers.filter(m => m.present).length;
@@ -302,11 +306,10 @@ const NewAttendance = () => {
             <button
               type="button"
               onClick={() => setShowMemberSelection(!showMemberSelection)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                showMemberSelection 
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showMemberSelection
+                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
             >
               {showMemberSelection ? 'Hide Members' : 'Track Members'}
             </button>
@@ -378,7 +381,7 @@ const NewAttendance = () => {
                       );
                     })}
                   </div>
-                  
+
                   {filteredMembers.length === 0 && (
                     <div className="text-center py-8">
                       <p className="text-gray-500">No members found matching your search.</p>

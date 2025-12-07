@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { attendanceAPI } from '@/Services/attendanceAPI';
+import { membersAPI } from '@/Services/membersAPI';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-toastify';
 
@@ -8,7 +9,7 @@ const EditAttendance = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { admin } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     date: '',
     serviceType: '',
@@ -42,9 +43,9 @@ const EditAttendance = () => {
     const youth = parseInt(formData.youth) || 0;
     const children = parseInt(formData.children) || 0;
     const visitors = parseInt(formData.visitors) || 0;
-    
+
     const calculatedTotal = adults + youth + children + visitors;
-    
+
     if (calculatedTotal !== parseInt(formData.totalAttendance)) {
       setFormData(prev => ({
         ...prev,
@@ -56,8 +57,8 @@ const EditAttendance = () => {
   const fetchAttendanceRecord = async () => {
     try {
       setLoading(true);
-      const response = await attendanceAPI.getAttendanceById(id);
-      
+      const response = await attendanceAPI.getById(id);
+
       if (response.success) {
         const record = response.data;
         setOriginalData(record);
@@ -71,7 +72,7 @@ const EditAttendance = () => {
           visitors: record.visitors.toString(),
           members: record.members || []
         });
-        
+
         // Show member selection if there are members in the record
         if (record.members && record.members.length > 0) {
           setShowMemberSelection(true);
@@ -90,23 +91,24 @@ const EditAttendance = () => {
   };
 
   const fetchServiceTypes = async () => {
-    try {
-      const response = await attendanceAPI.getServiceTypes();
-      if (response.success) {
-        setServiceTypes(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching service types:', error);
-    }
+    // Hardcoded service types to match existing system
+    setServiceTypes([
+      'Sunday Service',
+      'Digging Deep',
+      'Faith Clinic',
+      'Church Without Walls',
+      'Thanksgiving Service',
+      'New Year Service'
+    ]);
   };
 
   const fetchMembers = async () => {
     try {
       setLoadingMembers(true);
-      const response = await attendanceAPI.getMembersForAttendance();
+      const response = await membersAPI.getMembers();
       if (response.success) {
         setAvailableMembers(response.data);
-        
+
         // Initialize member attendance tracking with existing data
         const memberAttendance = response.data.map(member => {
           const existingRecord = formData.members.find(m => m.memberId === member.id);
@@ -172,7 +174,7 @@ const EditAttendance = () => {
         members: selectedMembers
       };
 
-      const response = await attendanceAPI.updateAttendance(id, attendanceData);
+      const response = await attendanceAPI.update(id, attendanceData);
 
       if (response.success) {
         toast.success('Attendance updated successfully!');
@@ -195,7 +197,7 @@ const EditAttendance = () => {
 
     try {
       setSaving(true);
-      const response = await attendanceAPI.deleteAttendance(id);
+      const response = await attendanceAPI.delete(id);
 
       if (response.success) {
         toast.success('Attendance record deleted successfully!');
@@ -389,11 +391,10 @@ const EditAttendance = () => {
             <button
               type="button"
               onClick={() => setShowMemberSelection(!showMemberSelection)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                showMemberSelection 
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showMemberSelection
+                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
             >
               {showMemberSelection ? 'Hide Members' : 'Track Members'}
             </button>
@@ -465,7 +466,7 @@ const EditAttendance = () => {
                       );
                     })}
                   </div>
-                  
+
                   {filteredMembers.length === 0 && (
                     <div className="text-center py-8">
                       <p className="text-gray-500">No members found matching your search.</p>

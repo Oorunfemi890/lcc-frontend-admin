@@ -9,4 +9,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  server: {
+    port: 3001,
+    strictPort: false,
+    host: true,
+    hmr: {
+      overlay: true,
+      clientPort: 3001,
+    },
+  },
 });

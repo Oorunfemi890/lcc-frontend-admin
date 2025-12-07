@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // Base URL for your backend API
-const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:3005/api/v1";
 
 // Create axios instance
 export const apiClient = axios.create({
@@ -58,8 +58,7 @@ apiClient.interceptors.response.use(
       const duration =
         endTime.getTime() - response.config.metadata.startTime.getTime();
       console.log(
-        `API Response: ${response.config.method?.toUpperCase()} ${
-          response.config.url
+        `API Response: ${response.config.method?.toUpperCase()} ${response.config.url
         } - ${duration}ms`
       );
     }

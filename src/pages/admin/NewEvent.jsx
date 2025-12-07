@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 const NewEvent = () => {
   const navigate = useNavigate();
   const { admin } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -27,24 +27,21 @@ const NewEvent = () => {
   const [imagePreview, setImagePreview] = useState(null);
 
   const eventCategories = [
-    'Service',
-    'Conference',
-    'Seminar',
-    'Workshop',
-    'Outreach',
-    'Fellowship',
-    'Youth Event',
-    'Children Event',
-    'Prayer Meeting',
-    'Special Program',
-    'Other'
+    { value: 'sunday_fellowship', label: 'Sunday Fellowship' },
+    { value: 'bible_study', label: 'Bible Study' },
+    { value: 'prayer', label: 'Prayer' },
+    { value: 'youth', label: 'Youth' },
+    { value: 'children', label: 'Children' },
+    { value: 'outreach', label: 'Outreach' },
+    { value: 'ministry', label: 'Ministry' },
+    { value: 'special_event', label: 'Special Event' }
   ];
 
   const recurringPatterns = [
-    { value: 'daily', label: 'Daily' },
     { value: 'weekly', label: 'Weekly' },
     { value: 'monthly', label: 'Monthly' },
-    { value: 'yearly', label: 'Yearly' }
+    { value: 'quarterly', label: 'Quarterly' },
+    { value: 'annually', label: 'Annually' }
   ];
 
   const handleInputChange = (e) => {
@@ -128,7 +125,7 @@ const NewEvent = () => {
     if (formData.time && formData.endTime) {
       const startTime = new Date(`2000-01-01T${formData.time}`);
       const endTime = new Date(`2000-01-01T${formData.endTime}`);
-      
+
       if (endTime <= startTime) {
         newErrors.endTime = 'End time must be after start time';
       }
@@ -150,7 +147,7 @@ const NewEvent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Please fix the errors below');
       return;
@@ -160,18 +157,28 @@ const NewEvent = () => {
       setLoading(true);
 
       const eventData = {
-        ...formData,
+        name: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location,
+        targetAudience: 'Everyone', // Default or add field if needed
+        frequency: formData.isRecurring ? formData.recurringPattern : 'one_time',
+        startDate: formData.date,
+        startTime: formData.time,
+        endTime: formData.endTime,
+        // These fields might not exist in backend yet but sending for completeness/future support
         maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null,
         organizer: admin?.name || 'Unknown',
-        status: 'upcoming',
-        currentAttendees: 0
+        eventFee: 0,
+        registrationRequired: false,
+        status: 'upcoming'
       };
 
       // If there's an image, handle it appropriately
       if (formData.image) {
         // For mock data, we'll just use a placeholder URL
         // In production, you would upload the image to a server or cloud storage
-        eventData.image = `/img/events/${formData.image.name}`;
+        eventData.imageUrl = `/img/events/${formData.image.name}`;
       }
 
       const response = await eventsAPI.createEvent(eventData);
@@ -221,9 +228,8 @@ const NewEvent = () => {
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.title ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.title ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Enter event title"
               />
               {errors.title && (
@@ -243,9 +249,8 @@ const NewEvent = () => {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={4}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.description ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.description ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Describe the event, its purpose, and what attendees can expect..."
               />
               {errors.description && (
@@ -265,13 +270,12 @@ const NewEvent = () => {
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.category ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.category ? 'border-red-300' : 'border-gray-300'
+                    }`}
                 >
                   <option value="">Select Category</option>
                   {eventCategories.map(category => (
-                    <option key={category} value={category}>{category}</option>
+                    <option key={category.value} value={category.value}>{category.label}</option>
                   ))}
                 </select>
                 {errors.category && (
@@ -291,9 +295,8 @@ const NewEvent = () => {
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.location ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.location ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="e.g., Main Auditorium, Church Grounds"
                 />
                 {errors.location && (
@@ -321,9 +324,8 @@ const NewEvent = () => {
                 value={formData.date}
                 onChange={handleInputChange}
                 min={new Date().toISOString().split('T')[0]}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.date ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.date ? 'border-red-300' : 'border-gray-300'
+                  }`}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -342,9 +344,8 @@ const NewEvent = () => {
                 name="time"
                 value={formData.time}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.time ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.time ? 'border-red-300' : 'border-gray-300'
+                  }`}
               />
               {errors.time && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -363,9 +364,8 @@ const NewEvent = () => {
                 name="endTime"
                 value={formData.endTime}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.endTime ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.endTime ? 'border-red-300' : 'border-gray-300'
+                  }`}
               />
               {errors.endTime && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -392,9 +392,8 @@ const NewEvent = () => {
                 onChange={handleInputChange}
                 min="1"
                 max="10000"
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.maxAttendees ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.maxAttendees ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Leave empty for no limit"
               />
               {errors.maxAttendees && (
@@ -411,7 +410,7 @@ const NewEvent = () => {
                 name="isRecurring"
                 checked={formData.isRecurring}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-900">
                 This is a recurring event
@@ -427,9 +426,8 @@ const NewEvent = () => {
                   name="recurringPattern"
                   value={formData.recurringPattern}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.recurringPattern ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.recurringPattern ? 'border-red-300' : 'border-gray-300'
+                    }`}
                 >
                   <option value="">Select Pattern</option>
                   {recurringPatterns.map(pattern => (
@@ -461,7 +459,7 @@ const NewEvent = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
               <p className="mt-1 text-sm text-gray-500">
                 Recommended size: 800x400px. Maximum file size: 5MB.
@@ -472,9 +470,9 @@ const NewEvent = () => {
               <div className="mt-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
                 <div className="relative inline-block">
-                  <img 
-                    src={imagePreview} 
-                    alt="Event preview" 
+                  <img
+                    src={imagePreview}
+                    alt="Event preview"
                     className="w-48 h-24 object-cover rounded-lg border border-gray-200"
                   />
                   <button
@@ -508,7 +506,7 @@ const NewEvent = () => {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
           >
             {loading && (
               <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

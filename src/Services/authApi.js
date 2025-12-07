@@ -5,54 +5,55 @@ export const authAPI = {
   // Login admin
   login: async (credentials) => {
     try {
-      const response = await apiClient.post('/auth/login', {
+      const response = await apiClient.post('/auth/admin/login', {
         email: credentials.email,
         password: credentials.password
       });
-      
+
       // Handle different response structures
       if (response.data) {
         // Check if response has success field or assume success if we get data
-        const isSuccess = response.data.success !== false && (response.data.success || response.data.data || response.data.user);
-        
+        const isSuccess = response.data.success !== false && response.data.user;
+
         if (isSuccess) {
           // Extract data from different possible structures
-          const responseData = response.data.data || response.data;
-          
+          const responseData = response.data.user;
+
+          console.log("responseData", responseData);
           return {
             success: true,
             data: {
-              admin: responseData.user || responseData.admin || responseData,
-              accessToken: responseData.accessToken || responseData.token,
-              token: responseData.accessToken || responseData.token,
+              admin: responseData,
+              accessToken: responseData.accessToken,
+              token: responseData.accessToken,
               refreshToken: responseData.refreshToken,
-              user: responseData.user || responseData.admin || responseData
+              user: responseData
             },
             message: response.data.message || 'Login successful'
           };
         }
       }
-      
+
       return {
         success: false,
         message: response.data?.message || 'Login failed'
       };
     } catch (error) {
       console.error('Login error:', error);
-      
+
       // Handle different error structures
       let errorMessage = 'Login failed';
-      
+
       if (error.response?.data) {
-        errorMessage = error.response.data.message || 
-                     error.response.data.error || 
-                     (Array.isArray(error.response.data.errors) ? 
-                       error.response.data.errors.join(', ') : 
-                       errorMessage);
+        errorMessage = error.response.data.message ||
+          error.response.data.error ||
+          (Array.isArray(error.response.data.errors) ?
+            error.response.data.errors.join(', ') :
+            errorMessage);
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       return {
         success: false,
         message: errorMessage,
@@ -67,13 +68,13 @@ export const authAPI = {
       const response = await apiClient.get('/auth/verify', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data) {
         const isSuccess = response.data.success !== false;
-        
+
         if (isSuccess) {
           const responseData = response.data.data || response.data;
-          
+
           return {
             success: true,
             data: {
@@ -85,14 +86,14 @@ export const authAPI = {
           };
         }
       }
-      
+
       return {
         success: false,
         message: response.data?.message || 'Token verification failed'
       };
     } catch (error) {
       console.error('Token verification error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Token verification failed'
@@ -103,7 +104,7 @@ export const authAPI = {
   // Refresh token
   refreshToken: async (refreshToken) => {
     try {
-      const response = await apiClient.post('/auth/refresh', {}, {
+      const response = await apiClient.post('/auth/admin/refresh', { refreshToken }, {
         headers: {
           'Authorization': `Bearer ${refreshToken}`,
           'Content-Type': 'application/json'
@@ -112,10 +113,10 @@ export const authAPI = {
 
       if (response.data) {
         const isSuccess = response.data.success !== false;
-        
+
         if (isSuccess) {
           const responseData = response.data.data || response.data;
-          
+
           return {
             success: true,
             data: {
@@ -136,7 +137,7 @@ export const authAPI = {
       };
     } catch (error) {
       console.error('Token refresh error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Token refresh failed'
@@ -152,14 +153,14 @@ export const authAPI = {
           'Authorization': `Bearer ${refreshToken || localStorage.getItem('churchAdminRefreshToken')}`
         }
       });
-      
+
       return {
         success: true,
         message: response.data?.message || 'Logged out successfully'
       };
     } catch (error) {
       console.error('Logout error:', error);
-      
+
       // Don't fail logout on API error - always return success for logout
       return {
         success: true,
@@ -174,14 +175,14 @@ export const authAPI = {
       const response = await apiClient.post('/auth/request-profile-update', {
         type: type // 'email' or 'profile'
       });
-      
+
       return {
         success: true,
         message: response.data?.message || 'Verification token sent to your email'
       };
     } catch (error) {
       console.error('Request profile update error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Failed to request profile update'
@@ -199,13 +200,13 @@ export const authAPI = {
         position: profileData.position,
         token: profileData.token // Include verification token if provided
       });
-      
+
       if (response.data) {
         const isSuccess = response.data.success !== false;
-        
+
         if (isSuccess) {
           const responseData = response.data.data || response.data;
-          
+
           return {
             success: true,
             data: {
@@ -216,26 +217,26 @@ export const authAPI = {
           };
         }
       }
-      
+
       return {
         success: false,
         message: response.data?.message || 'Profile update failed'
       };
     } catch (error) {
       console.error('Profile update error:', error);
-      
+
       let errorMessage = 'Profile update failed';
-      
+
       if (error.response?.data) {
-        errorMessage = error.response.data.message || 
-                     error.response.data.error ||
-                     (Array.isArray(error.response.data.errors) ? 
-                       error.response.data.errors.join(', ') : 
-                       errorMessage);
+        errorMessage = error.response.data.message ||
+          error.response.data.error ||
+          (Array.isArray(error.response.data.errors) ?
+            error.response.data.errors.join(', ') :
+            errorMessage);
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       return {
         success: false,
         message: errorMessage
@@ -249,7 +250,7 @@ export const authAPI = {
       const response = await apiClient.post('/auth/verify-profile-token', {
         token: token
       });
-      
+
       return {
         success: true,
         data: response.data?.data,
@@ -257,7 +258,7 @@ export const authAPI = {
       };
     } catch (error) {
       console.error('Verify profile token error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Token verification failed'
@@ -271,14 +272,14 @@ export const authAPI = {
       const response = await apiClient.post('/auth/request-password-change', {
         currentPassword: currentPassword
       });
-      
+
       return {
         success: true,
         message: response.data?.message || 'Password change verification token sent to your email'
       };
     } catch (error) {
       console.error('Request password change error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Failed to request password change'
@@ -293,26 +294,26 @@ export const authAPI = {
         token: passwordData.token,
         newPassword: passwordData.newPassword
       });
-      
+
       return {
         success: true,
         message: response.data?.message || 'Password changed successfully'
       };
     } catch (error) {
       console.error('Password change error:', error);
-      
+
       let errorMessage = 'Password change failed';
-      
+
       if (error.response?.data) {
-        errorMessage = error.response.data.message || 
-                     error.response.data.error ||
-                     (Array.isArray(error.response.data.errors) ? 
-                       error.response.data.errors.join(', ') : 
-                       errorMessage);
+        errorMessage = error.response.data.message ||
+          error.response.data.error ||
+          (Array.isArray(error.response.data.errors) ?
+            error.response.data.errors.join(', ') :
+            errorMessage);
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       return {
         success: false,
         message: errorMessage
@@ -326,14 +327,14 @@ export const authAPI = {
       const response = await apiClient.post('/auth/verify-password-token', {
         token: token
       });
-      
+
       return {
         success: true,
         message: response.data?.message || 'Token verified successfully'
       };
     } catch (error) {
       console.error('Verify password token error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Token verification failed'
@@ -345,13 +346,13 @@ export const authAPI = {
   getProfile: async () => {
     try {
       const response = await apiClient.get('/auth/me');
-      
+
       if (response.data) {
         const isSuccess = response.data.success !== false;
-        
+
         if (isSuccess) {
           const responseData = response.data.data || response.data;
-          
+
           return {
             success: true,
             data: {
@@ -362,14 +363,14 @@ export const authAPI = {
           };
         }
       }
-      
+
       return {
         success: false,
         message: response.data?.message || 'Failed to get profile'
       };
     } catch (error) {
       console.error('Get profile error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Failed to get profile'
@@ -383,14 +384,14 @@ export const authAPI = {
       const response = await apiClient.post('/auth/forgot-password', {
         email: email
       });
-      
+
       return {
         success: true,
         message: response.data?.message || 'Password reset email sent'
       };
     } catch (error) {
       console.error('Password reset request error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Failed to request password reset'
@@ -405,14 +406,14 @@ export const authAPI = {
         token: token,
         newPassword: newPassword
       });
-      
+
       return {
         success: true,
         message: response.data?.message || 'Password reset successfully'
       };
     } catch (error) {
       console.error('Password reset error:', error);
-      
+
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Failed to reset password'
