@@ -15,6 +15,15 @@ const ServicesManagement = () => {
     const [selectedService, setSelectedService] = useState(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [serviceToDelete, setServiceToDelete] = useState(null);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [formData, setFormData] = useState({
+        title: '',
+        frequency: 'weekly',
+        dayOfWeek: '',
+        startTime: '',
+        description: '',
+        active: true
+    });
 
     // Role-based permissions
     const canView = true; // All roles can view
@@ -71,6 +80,30 @@ const ServicesManagement = () => {
         setShowViewModal(true);
     };
 
+    const handleAddService = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await servicesAPI.create(formData);
+            if (response.success) {
+                toast.success('Service created successfully');
+                setShowAddModal(false);
+                setFormData({
+                    title: '',
+                    frequency: 'weekly',
+                    dayOfWeek: '',
+                    startTime: '',
+                    description: '',
+                    active: true
+                });
+                fetchServices();
+            } else {
+                toast.error(response.message);
+            }
+        } catch (error) {
+            toast.error('Failed to create service');
+        }
+    };
+
     const filteredItems = services.filter(item => {
         const searchLower = searchTerm.toLowerCase();
         return (
@@ -100,7 +133,10 @@ const ServicesManagement = () => {
                     <p className="text-gray-600 mt-1">Manage church service schedules</p>
                 </div>
                 {canEdit && (
-                    <button className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
                         <i className="ri-add-line mr-2"></i>
                         Add Service
                     </button>
@@ -249,6 +285,125 @@ const ServicesManagement = () => {
                         <div className="flex justify-end mt-6">
                             <button onClick={() => setShowViewModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Close</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Service Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">Add New Service</h3>
+                            <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <i className="ri-close-line text-xl"></i>
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddService}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Title <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.title}
+                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="e.g., Sunday Service"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Frequency <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        required
+                                        value={formData.frequency}
+                                        onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="daily">Daily</option>
+                                        <option value="special">Special</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Day of Week <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        required
+                                        value={formData.dayOfWeek}
+                                        onChange={(e) => setFormData({ ...formData, dayOfWeek: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">Select day</option>
+                                        <option value="Sunday">Sunday</option>
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                        <option value="Friday">Friday</option>
+                                        <option value="Saturday">Saturday</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Start Time <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="time"
+                                        required
+                                        value={formData.startTime}
+                                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Status
+                                    </label>
+                                    <select
+                                        value={formData.active}
+                                        onChange={(e) => setFormData({ ...formData, active: e.target.value === 'true' })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        rows="3"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="Optional description..."
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddModal(false)}
+                                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                                >
+                                    Create Service
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

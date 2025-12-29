@@ -85,5 +85,22 @@ export const attendanceAPI = {
         message: error.response?.data?.message || 'Failed to fetch attendance statistics'
       };
     }
-  }
+  },
+
+  // Generate attendance report
+  generateReport: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/attendance/report', { params });
+      return { success: true, data: response.data?.data, message: response.data?.message || 'Report generated successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to generate report'
+      };
+    }
+  },
+
+  // Aliases for backward compatibility
+  getAttendanceById: function (id) { return this.getById(id); },
+  deleteAttendance: function (id) { return this.delete(id); }
 };

@@ -199,7 +199,7 @@ const AttendanceManagement = () => {
   if (loading && filters.page === 1) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         <span className="ml-3 text-gray-600">Loading attendance records...</span>
       </div>
     );
@@ -223,7 +223,7 @@ const AttendanceManagement = () => {
           </button>
           <Link
             to="/attendance/new"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <i className="ri-add-line mr-2"></i>
             Record Attendance
@@ -236,7 +236,7 @@ const AttendanceManagement = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <i className="ri-file-list-3-line text-blue-600 text-xl"></i>
+              <i className="ri-file-list-3-line text-indigo-600 text-xl"></i>
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">Total Records</p>
@@ -319,15 +319,12 @@ const AttendanceManagement = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Services</option>
-              <option value="Sunday Fire Service">Sunday Fire Service</option>
-              <option value="Sunday School">Sunday School</option>
-              <option value="Sunday Main Service">Sunday Main Service</option>
-              <option value="Tuesday Bible Study">Tuesday Bible Study</option>
-              <option value="Wednesday Prayer">Wednesday Prayer</option>
-              <option value="Thursday Faith Clinic">Thursday Faith Clinic</option>
-              <option value="Friday Night Service">Friday Night Service</option>
-              <option value="Holy Ghost Service">Holy Ghost Service</option>
-              <option value="Special Program">Special Program</option>
+              <option value="Sunday Service">Sunday Service</option>
+              <option value="Digging Deep">Digging Deep</option>
+              <option value="Faith Clinic">Faith Clinic</option>
+              <option value="Church Without Walls">Church Without Walls</option>
+              <option value="Thanksgiving Service">Thanksgiving Service</option>
+              <option value="New Year Service">New Year Service</option>
             </select>
           </div>
           <div>
@@ -401,7 +398,7 @@ const AttendanceManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-lg font-bold text-blue-600">
+                    <div className="text-lg font-bold text-indigo-600">
                       {record.totalAttendance}
                     </div>
                   </td>
@@ -409,7 +406,7 @@ const AttendanceManagement = () => {
                     <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => handleViewDetails(record.id)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-indigo-600 hover:text-blue-900"
                         title="View Details"
                       >
                         <i className="ri-eye-line text-lg"></i>
@@ -439,7 +436,7 @@ const AttendanceManagement = () => {
         {/* Loading State for pagination */}
         {loading && filters.page > 1 && (
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
             <span className="ml-2 text-gray-600">Loading...</span>
           </div>
         )}
@@ -481,7 +478,7 @@ const AttendanceManagement = () => {
                         onClick={() => handlePageChange(pageNum)}
                         disabled={loading}
                         className={`px-3 py-2 text-sm font-medium rounded-md ${pageNum === pagination.currentPage
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-indigo-600 text-white'
                           : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
@@ -517,7 +514,7 @@ const AttendanceManagement = () => {
             {!filters.startDate && !filters.endDate && filters.serviceType === 'all' && (
               <Link
                 to="/attendance/new"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <i className="ri-add-line mr-2"></i>
                 Record First Attendance
@@ -639,7 +636,7 @@ const AttendanceManagement = () => {
               <div className="flex justify-end space-x-3 pt-6 mt-6 border-t">
                 <Link
                   to={`/attendance/${selectedRecord.id}/edit`}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
                   onClick={() => setShowDetails(false)}
                 >
                   Edit Record

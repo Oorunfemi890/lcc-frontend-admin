@@ -235,7 +235,7 @@ const AdminLayout = () => {
                     />
                   ) : (
                     <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <i className="ri-user-line text-blue-600"></i>
+                      <i className="ri-user-line text-indigo-600"></i>
                     </div>
                   )}
                   <span className="ml-2 text-sm text-gray-700 hidden sm:block">

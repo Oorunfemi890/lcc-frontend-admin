@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { followUpAPI } from '@/Services/followUpAPI';
 import { firstTimerAPI } from '@/Services/firstTimerAPI';
 import { membersAPI } from '@/Services/membersAPI';
@@ -8,6 +9,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 
 const FollowUpManagement = () => {
     const { admin } = useAuth();
+    const navigate = useNavigate();
     const [followUps, setFollowUps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -169,7 +171,7 @@ const FollowUpManagement = () => {
                 </div>
                 {canCreate && (
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={() => navigate('/follow-up/new')}
                         className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
                     >
                         <i className="ri-add-line mr-2"></i>

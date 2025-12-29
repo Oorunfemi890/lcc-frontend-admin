@@ -4,12 +4,12 @@ import { authAPI } from '@/Services/authAPI';
 import { toast } from 'react-toastify';
 
 // Verification Modal Component
-const VerificationModal = ({ 
-  isOpen, 
-  onClose, 
-  onVerify, 
-  title, 
-  description, 
+const VerificationModal = ({
+  isOpen,
+  onClose,
+  onVerify,
+  title,
+  description,
   loading,
   tokenType = 'profile' // 'profile' or 'password'
 }) => {
@@ -35,11 +35,11 @@ const VerificationModal = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={handleClose}></div>
-        
+
         <div className="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900 flex items-center">
-              <i className={`${tokenType === 'password' ? 'ri-shield-keyhole-line text-red-600' : 'ri-verified-badge-line text-blue-600'} mr-2 text-xl`}></i>
+              <i className={`${tokenType === 'password' ? 'ri-shield-keyhole-line text-red-600' : 'ri-verified-badge-line text-indigo-600'} mr-2 text-xl`}></i>
               {title}
             </h3>
             <button
@@ -49,7 +49,7 @@ const VerificationModal = ({
               <i className="ri-close-line text-xl"></i>
             </button>
           </div>
-          
+
           <div className="mb-4">
             <p className="text-sm text-gray-600">{description}</p>
           </div>
@@ -84,11 +84,10 @@ const VerificationModal = ({
               <button
                 type="submit"
                 disabled={loading || !token}
-                className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  tokenType === 'password' 
-                    ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' 
-                    : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                } transition-colors flex items-center justify-center`}
+                className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${tokenType === 'password'
+                  ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                  : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-blue-500'
+                  } transition-colors flex items-center justify-center`}
               >
                 {loading && (
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -108,7 +107,7 @@ const VerificationModal = ({
 
 const AdminProfile = () => {
   const { admin, updateProfile, logout } = useAuth();
-  
+
   const [profileData, setProfileData] = useState({
     name: admin?.name || '',
     email: admin?.email || '',
@@ -128,7 +127,7 @@ const AdminProfile = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
-  
+
   // Modal states
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -226,15 +225,15 @@ const AdminProfile = () => {
 
     // Check if email is being changed
     const emailChanged = profileData.email.toLowerCase() !== admin.email.toLowerCase();
-    
+
     if (emailChanged) {
       // Store profile data and request verification token
       setPendingProfileData(profileData);
-      
+
       try {
         setProfileLoading(true);
         const response = await authAPI.requestProfileUpdate('email');
-        
+
         if (response.success) {
           setShowVerificationModal(true);
           toast.success('Verification token sent to your email. Please check your inbox.');
@@ -366,9 +365,9 @@ const AdminProfile = () => {
           newPassword: '',
           confirmPassword: ''
         });
-        
+
         toast.success('Password changed successfully! You will be logged out.');
-        
+
         // Auto logout after password change
         setTimeout(async () => {
           await logout();
@@ -417,13 +416,13 @@ const AdminProfile = () => {
             <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
             <p className="text-gray-600 mt-1">Manage your account settings and preferences</p>
           </div>
-          
+
           {activeTab === 'profile' && (
             <div className="flex space-x-3">
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
                 >
                   <i className="ri-edit-line mr-2"></i>
                   Edit Profile
@@ -448,9 +447,9 @@ const AdminProfile = () => {
           <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
               {admin?.avatar ? (
-                <img 
-                  src={admin.avatar} 
-                  alt={admin.name} 
+                <img
+                  src={admin.avatar}
+                  alt={admin.name}
                   className="h-20 w-20 rounded-full object-cover ring-4 ring-gray-100"
                 />
               ) : (
@@ -475,14 +474,12 @@ const AdminProfile = () => {
               </div>
             </div>
             <div className="flex-shrink-0">
-              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                admin?.isActive 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${
-                  admin?.isActive ? 'bg-green-400' : 'bg-red-400'
-                }`}></div>
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${admin?.isActive
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+                }`}>
+                <div className={`w-2 h-2 rounded-full mr-2 ${admin?.isActive ? 'bg-green-400' : 'bg-red-400'
+                  }`}></div>
                 {admin?.isActive ? 'Active' : 'Inactive'}
               </div>
             </div>
@@ -495,33 +492,30 @@ const AdminProfile = () => {
             <nav className="-mb-px flex space-x-8 px-6">
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'profile'
+                  ? 'border-blue-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <i className="ri-user-line mr-2"></i>
                 Profile Information
               </button>
               <button
                 onClick={() => setActiveTab('security')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'security'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'security'
+                  ? 'border-blue-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <i className="ri-shield-keyhole-line mr-2"></i>
                 Security
               </button>
               <button
                 onClick={() => setActiveTab('activity')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'activity'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activity'
+                  ? 'border-blue-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <i className="ri-history-line mr-2"></i>
                 Activity Log
@@ -546,9 +540,8 @@ const AdminProfile = () => {
                           name="name"
                           value={profileData.name}
                           onChange={handleProfileInputChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            profileErrors.name ? 'border-red-300' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${profileErrors.name ? 'border-red-300' : 'border-gray-300'
+                            }`}
                           placeholder="Enter your full name"
                         />
                       ) : (
@@ -566,7 +559,7 @@ const AdminProfile = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address * 
+                        Email Address *
                         {isEditing && profileData.email.toLowerCase() !== admin?.email.toLowerCase() && (
                           <span className="text-yellow-600 text-xs ml-1">(Will require verification)</span>
                         )}
@@ -577,9 +570,8 @@ const AdminProfile = () => {
                           name="email"
                           value={profileData.email}
                           onChange={handleProfileInputChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            profileErrors.email ? 'border-red-300' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${profileErrors.email ? 'border-red-300' : 'border-gray-300'
+                            }`}
                           placeholder="Enter your email address"
                         />
                       ) : (
@@ -605,9 +597,8 @@ const AdminProfile = () => {
                           name="phone"
                           value={profileData.phone}
                           onChange={handleProfileInputChange}
-                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            profileErrors.phone ? 'border-red-300' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${profileErrors.phone ? 'border-red-300' : 'border-gray-300'
+                            }`}
                           placeholder="Enter your phone number"
                         />
                       ) : (
@@ -650,7 +641,7 @@ const AdminProfile = () => {
                     <button
                       type="submit"
                       disabled={profileLoading}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                      className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
                     >
                       {profileLoading && (
                         <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -678,7 +669,7 @@ const AdminProfile = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -689,9 +680,8 @@ const AdminProfile = () => {
                         name="currentPassword"
                         value={passwordData.currentPassword}
                         onChange={handlePasswordInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder="Enter your current password"
                       />
                       {passwordErrors.currentPassword && (
@@ -711,9 +701,8 @@ const AdminProfile = () => {
                         name="newPassword"
                         value={passwordData.newPassword}
                         onChange={handlePasswordInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder="Enter your new password"
                       />
                       {passwordErrors.newPassword && (
@@ -733,9 +722,8 @@ const AdminProfile = () => {
                         name="confirmPassword"
                         value={passwordData.confirmPassword}
                         onChange={handlePasswordInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder="Confirm your new password"
                       />
                       {passwordErrors.confirmPassword && (
@@ -806,7 +794,7 @@ const AdminProfile = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-gray-900 flex items-center">
-                          <i className="ri-user-settings-line mr-2 text-blue-600"></i>
+                          <i className="ri-user-settings-line mr-2 text-indigo-600"></i>
                           Profile Updated
                         </p>
                         <p className="text-sm text-gray-600">Personal information was updated</p>
@@ -814,7 +802,7 @@ const AdminProfile = () => {
                       <span className="text-xs text-gray-500">{formatDate(admin?.updatedAt)}</span>
                     </div>
                   </div>
-                  
+
                   <div className="border-l-4 border-green-500 pl-4 pb-4">
                     <div className="flex items-center justify-between">
                       <div>
