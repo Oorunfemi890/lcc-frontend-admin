@@ -88,6 +88,13 @@ const AdminLayout = () => {
       permission: "admin_management",
       roles: ["SUPER_ADMIN", "ADMIN"], // Only visible to SUPER_ADMIN and ADMIN
     },
+    {
+      path: "/settings",
+      icon: "ri-settings-3-line",
+      label: "Settings",
+      permission: "settings",
+      roles: ["SUPER_ADMIN", "ADMIN"], // Only visible to SUPER_ADMIN and ADMIN
+    },
   ];
 
   const filteredSidebarItems = sidebarItems.filter((item) => {
@@ -164,9 +171,9 @@ const AdminLayout = () => {
         <div className="flex-shrink-0 border-t border-gray-200 p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              {admin?.avatar ? (
+              {admin?.member?.profilePicture || admin?.profilePicture || admin?.avatar ? (
                 <img
-                  src={admin.avatar}
+                  src={admin.member?.profilePicture || admin.profilePicture || admin.avatar}
                   alt={admin.name}
                   className="h-8 w-8 rounded-full object-cover"
                 />
@@ -227,15 +234,15 @@ const AdminLayout = () => {
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  {admin?.avatar ? (
+                  {admin?.member?.profilePicture || admin?.profilePicture || admin?.avatar ? (
                     <img
-                      src={admin.avatar}
+                      src={admin.member?.profilePicture || admin.profilePicture || admin.avatar}
                       alt={admin.name}
                       className="h-8 w-8 rounded-full object-cover"
                     />
                   ) : (
                     <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <i className="ri-user-line text-blue-600"></i>
+                      <i className="ri-user-line text-indigo-600"></i>
                     </div>
                   )}
                   <span className="ml-2 text-sm text-gray-700 hidden sm:block">
@@ -256,7 +263,7 @@ const AdminLayout = () => {
                         My Profile
                       </Link>
                       <Link
-                        to="https://rccg-center.netlify.app/"
+                        to="https://www.libertychristiancentre.online/"
                         onClick={() => setProfileDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >

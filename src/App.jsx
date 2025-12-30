@@ -23,6 +23,7 @@ import TestimoniesManagement from "./pages/admin/TestimoniesManagement";
 import ServicesManagement from "./pages/admin/ServicesManagement";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminManagement from "./pages/admin/AdminManagement";
+import Settings from "./pages/admin/Settings";
 
 // Additional Admin Components
 import NewMember from "./pages/admin/NewMember";
@@ -31,6 +32,7 @@ import NewAttendance from "./pages/admin/NewAttendance";
 import EditAttendance from "./pages/admin/EditAttendance";
 import NewEvent from "./pages/admin/NewEvent";
 import EditEvent from "./pages/admin/EditEvent";
+import NewFollowUp from "./pages/admin/NewFollowUp";
 
 // Create React Query client with default options for admin
 const queryClient = new QueryClient({
@@ -198,6 +200,14 @@ const AdminApp = () => (
                 }
               />
               <Route
+                path="follow-up/new"
+                element={
+                  <ProtectedRoute requiredPermission="follow_up">
+                    <NewFollowUp />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="testimonies"
                 element={
                   <ProtectedRoute requiredPermission="testimonies">
@@ -227,6 +237,16 @@ const AdminApp = () => (
                 }
               />
 
+              {/* Settings Management - SUPER_ADMIN and ADMIN only */}
+              <Route
+                path="settings"
+                element={
+                  <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ADMIN']}>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Default redirect to dashboard */}
               <Route index element={<AdminDashboard />} />
             </Route>
@@ -248,7 +268,7 @@ const AdminApp = () => (
                     <div>
                       <a
                         href="/dashboard"
-                        className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
                         Go to Dashboard
                       </a>

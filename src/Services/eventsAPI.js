@@ -66,6 +66,9 @@ export const eventsAPI = {
       if (filters.category && filters.category !== 'all') {
         queryParams.append('category', filters.category);
       }
+      if (filters.status && filters.status !== 'all') {
+        queryParams.append('status', filters.status);
+      }
 
       const response = await apiClient.get(`/program?${queryParams.toString()}`);
 

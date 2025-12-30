@@ -7,24 +7,27 @@ const NewMember = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    phone: '',
+    phoneNumber: '',
+    countryCode: '+234',
     address: '',
     dateOfBirth: '',
     gender: '',
     maritalStatus: '',
     occupation: '',
-    department: '',
-    membershipDate: new Date().toISOString().split('T')[0],
-    isActive: true,
-    emergencyContact: {
-      name: '',
-      phone: '',
-      relationship: ''
-    }
+    membershipType: '',
+    memberSince: new Date().toISOString().split('T')[0],
+    active: true,
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    emergencyContactRelationship: '',
+    securityPin: Math.floor(100000 + Math.random() * 900000).toString() // Generate 6-digit PIN
   });
 
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -47,21 +50,10 @@ const NewMember = () => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    if (name.startsWith('emergencyContact.')) {
-      const field = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        emergencyContact: {
-          ...prev.emergencyContact,
-          [field]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -72,26 +64,64 @@ const NewMember = () => {
     }
   };
 
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      setProfilePicture(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePicturePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeProfilePicture = () => {
+    setProfilePicture(null);
+    setProfilePicturePreview(null);
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
     // Required fields validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+
+    // Email is optional, but if provided must be valid
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
     }
 
-    if (!formData.membershipDate) {
-      newErrors.membershipDate = 'Membership date is required';
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Date of birth is required';
+    }
+
+    if (!formData.memberSince) {
+      newErrors.memberSince = 'Membership date is required';
     }
 
     setErrors(newErrors);
@@ -109,7 +139,22 @@ const NewMember = () => {
     try {
       setLoading(true);
 
-      const response = await membersAPI.addMember(formData);
+      // Create FormData for file upload
+      const submitData = new FormData();
+
+      // Append all form fields
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null && formData[key] !== '') {
+          submitData.append(key, formData[key]);
+        }
+      });
+
+      // Append profile picture if selected
+      if (profilePicture) {
+        submitData.append('profilePicture', profilePicture);
+      }
+
+      const response = await membersAPI.addMember(submitData);
 
       if (response.success) {
         toast.success('Member added successfully!');
@@ -146,24 +191,92 @@ const NewMember = () => {
         {/* Personal Information */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h2>
+
+          {/* Profile Picture Upload */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Picture (Optional)
+            </label>
+            <div className="flex items-center space-x-4">
+              {profilePicturePreview ? (
+                <div className="relative">
+                  <img
+                    src={profilePicturePreview}
+                    alt="Profile preview"
+                    className="h-24 w-24 rounded-full object-cover border-2 border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeProfilePicture}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <i className="ri-close-line text-sm"></i>
+                  </button>
+                </div>
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                  <i className="ri-user-line text-3xl text-gray-400"></i>
+                </div>
+              )}
+              <div>
+                <input
+                  type="file"
+                  id="profilePicture"
+                  accept="image/*"
+                  onChange={handleProfilePictureChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="profilePicture"
+                  className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <i className="ri-upload-2-line mr-2"></i>
+                  Upload Photo
+                </label>
+                <p className="text-xs text-gray-500 mt-1">Max 5MB (JPG, PNG, GIF)</p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name *
+                First Name *
               </label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.name ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.firstName ? 'border-red-300' : 'border-gray-300'
                   }`}
-                placeholder="Enter full name"
+                placeholder="Enter first name"
               />
-              {errors.name && (
+              {errors.firstName && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
                   <i className="ri-error-warning-line mr-1"></i>
-                  {errors.name}
+                  {errors.firstName}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name *
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.lastName ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                placeholder="Enter last name"
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <i className="ri-error-warning-line mr-1"></i>
+                  {errors.lastName}
                 </p>
               )}
             </div>
@@ -195,32 +308,39 @@ const NewMember = () => {
               </label>
               <input
                 type="tel"
-                name="phone"
-                value={formData.phone}
+                name="phoneNumber"
+                value={formData.phoneNumber}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.phone ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.phoneNumber ? 'border-red-300' : 'border-gray-300'
                   }`}
                 placeholder="e.g., +234 803 123 4567"
               />
-              {errors.phone && (
+              {errors.phoneNumber && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
                   <i className="ri-error-warning-line mr-1"></i>
-                  {errors.phone}
+                  {errors.phoneNumber}
                 </p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date of Birth
+                Date of Birth *
               </label>
               <input
                 type="date"
                 name="dateOfBirth"
                 value={formData.dateOfBirth}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.dateOfBirth ? 'border-red-300' : 'border-gray-300'
+                  }`}
               />
+              {errors.dateOfBirth && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <i className="ri-error-warning-line mr-1"></i>
+                  {errors.dateOfBirth}
+                </p>
+              )}
             </div>
 
             <div>
@@ -234,8 +354,8 @@ const NewMember = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
               </select>
             </div>
 
@@ -250,10 +370,10 @@ const NewMember = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Select Status</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-                <option value="Divorced">Divorced</option>
-                <option value="Widowed">Widowed</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
               </select>
             </div>
 
@@ -296,8 +416,8 @@ const NewMember = () => {
                 Department
               </label>
               <select
-                name="department"
-                value={formData.department}
+                name="membershipType"
+                value={formData.membershipType}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
@@ -314,16 +434,16 @@ const NewMember = () => {
               </label>
               <input
                 type="date"
-                name="membershipDate"
-                value={formData.membershipDate}
+                name="memberSince"
+                value={formData.memberSince}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.membershipDate ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${errors.memberSince ? 'border-red-300' : 'border-gray-300'
                   }`}
               />
-              {errors.membershipDate && (
+              {errors.memberSince && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
                   <i className="ri-error-warning-line mr-1"></i>
-                  {errors.membershipDate}
+                  {errors.memberSince}
                 </p>
               )}
             </div>
@@ -331,8 +451,8 @@ const NewMember = () => {
             <div className="flex items-center">
               <input
                 type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
+                name="active"
+                checked={formData.active}
                 onChange={handleInputChange}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
@@ -353,8 +473,8 @@ const NewMember = () => {
               </label>
               <input
                 type="text"
-                name="emergencyContact.name"
-                value={formData.emergencyContact.name}
+                name="emergencyContactName"
+                value={formData.emergencyContactName}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter contact name"
@@ -367,8 +487,8 @@ const NewMember = () => {
               </label>
               <input
                 type="tel"
-                name="emergencyContact.phone"
-                value={formData.emergencyContact.phone}
+                name="emergencyContactPhone"
+                value={formData.emergencyContactPhone}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="e.g., +234 803 123 4567"
@@ -380,8 +500,8 @@ const NewMember = () => {
                 Relationship
               </label>
               <select
-                name="emergencyContact.relationship"
-                value={formData.emergencyContact.relationship}
+                name="emergencyContactRelationship"
+                value={formData.emergencyContactRelationship}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >

@@ -70,19 +70,70 @@ export const membersAPI = {
     }
   },
 
-  // Update member status (active/inactive)
-  updateMemberStatus: async (id, status) => {
+  // Block member (for block button - sets blockReason)
+  blockMember: async (id, reason = 'Blocked by admin') => {
     try {
-      const response = await apiClient.patch(`/member/${id}/status`, { isActive: status });
+      const response = await apiClient.patch(`/member/${id}/block`, { reason });
       return {
         success: true,
         data: response.data.data,
-        message: 'Member status updated successfully'
+        message: 'Member blocked successfully'
       };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to update member status'
+        message: error.response?.data?.message || 'Failed to block member'
+      };
+    }
+  },
+
+  // Unblock member (clears blockReason)
+  unblockMember: async (id) => {
+    try {
+      const response = await apiClient.patch(`/member/${id}/unblock`);
+      return {
+        success: true,
+        data: response.data.data,
+        message: 'Member unblocked successfully'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to unblock member'
+      };
+    }
+  },
+
+  // Activate member (for status toggle - just sets active=true)
+  activateMember: async (id) => {
+    try {
+      const response = await apiClient.patch(`/member/${id}/activate`);
+      return {
+        success: true,
+        data: response.data.data,
+        message: 'Member activated successfully'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to activate member'
+      };
+    }
+  },
+
+  // Deactivate member (for status toggle - just sets active=false)
+  deactivateMember: async (id) => {
+    try {
+      const response = await apiClient.patch(`/member/${id}/deactivate`);
+      return {
+        success: true,
+        data: response.data.data,
+        message: 'Member deactivated successfully'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to deactivate member'
       };
     }
   },

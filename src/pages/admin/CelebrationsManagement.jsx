@@ -158,8 +158,18 @@ const CelebrationsManagement = () => {
     return matchesSearch && matchesStatus && matchesType && matchesSource;
   });
 
-  // Get unique types for filter
-  const types = [...new Set(celebrations.map(celebration => celebration.type))].filter(Boolean);
+  // Celebration types from backend
+  const celebrationTypes = [
+    { value: 'birthday', label: 'Birthday' },
+    { value: 'baptism', label: 'Baptism' },
+    { value: 'wedding', label: 'Wedding' },
+    { value: 'graduation', label: 'Graduation' },
+    { value: 'newborn', label: 'Newborn' },
+    { value: 'anniversary', label: 'Anniversary' },
+    { value: 'promotion', label: 'Promotion' },
+    { value: 'ordination', label: 'Ordination' },
+    { value: 'other', label: 'Other' }
+  ];
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set';
@@ -258,7 +268,7 @@ const CelebrationsManagement = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <i className="ri-cake-3-line text-blue-600"></i>
+              <i className="ri-cake-3-line text-indigo-600"></i>
             </div>
             <div className="ml-3">
               <p className="text-sm text-gray-600">Total</p>
@@ -367,8 +377,8 @@ const CelebrationsManagement = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Types</option>
-              {types.map(type => (
-                <option key={type} value={type}>{type}</option>
+              {celebrationTypes.map(type => (
+                <option key={type.value} value={type.value}>{type.label}</option>
               ))}
             </select>
           </div>
@@ -408,7 +418,7 @@ const CelebrationsManagement = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <i className="ri-checkbox-multiple-line text-blue-600 mr-2"></i>
+              <i className="ri-checkbox-multiple-line text-indigo-600 mr-2"></i>
               <span className="text-blue-800 font-medium">
                 {selectedCelebrations.length} celebration(s) selected
               </span>
@@ -448,7 +458,7 @@ const CelebrationsManagement = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={handleSelectAll}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                className="text-sm text-indigo-600 hover:text-blue-800 flex items-center"
               >
                 <i className="ri-checkbox-multiple-line mr-1"></i>
                 {selectedCelebrations.length === celebrations.filter(c => c.status === 'pending').length
@@ -485,7 +495,7 @@ const CelebrationsManagement = () => {
                         type="checkbox"
                         checked={selectedCelebrations.includes(celebration.id)}
                         onChange={() => handleSelectCelebration(celebration.id)}
-                        className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="mr-3 h-4 w-4 text-indigo-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                     )}
                     <div className="flex-shrink-0 h-10 w-10">
@@ -549,7 +559,7 @@ const CelebrationsManagement = () => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleViewDetails(celebration.id)}
-                      className="text-blue-600 hover:text-blue-800 p-1"
+                      className="text-indigo-600 hover:text-blue-800 p-1"
                       title="View Details"
                     >
                       <i className="ri-eye-line"></i>

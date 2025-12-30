@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 const EditEvent = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -30,17 +30,14 @@ const EditEvent = () => {
   const [existingImage, setExistingImage] = useState(null);
 
   const eventCategories = [
-    'Service',
-    'Conference',
-    'Seminar',
-    'Workshop',
-    'Outreach',
-    'Fellowship',
-    'Youth Event',
-    'Children Event',
-    'Prayer Meeting',
-    'Special Program',
-    'Other'
+    { value: 'sunday_fellowship', label: 'Sunday Fellowship' },
+    { value: 'bible_study', label: 'Bible Study' },
+    { value: 'prayer', label: 'Prayer' },
+    { value: 'youth', label: 'Youth' },
+    { value: 'children', label: 'Children' },
+    { value: 'outreach', label: 'Outreach' },
+    { value: 'ministry', label: 'Ministry' },
+    { value: 'special_event', label: 'Special Event' }
   ];
 
   const recurringPatterns = [
@@ -65,7 +62,7 @@ const EditEvent = () => {
     try {
       setLoading(true);
       const response = await eventsAPI.getEventById(id);
-      
+
       if (response.success) {
         const event = response.data;
         setOriginalData(event);
@@ -83,7 +80,7 @@ const EditEvent = () => {
           status: event.status || 'upcoming',
           image: null // New image will be handled separately
         });
-        
+
         // Set existing image for preview
         if (event.image) {
           setExistingImage(event.image);
@@ -180,7 +177,7 @@ const EditEvent = () => {
     if (formData.time && formData.endTime) {
       const startTime = new Date(`2000-01-01T${formData.time}`);
       const endTime = new Date(`2000-01-01T${formData.endTime}`);
-      
+
       if (endTime <= startTime) {
         newErrors.endTime = 'End time must be after start time';
       }
@@ -202,7 +199,7 @@ const EditEvent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Please fix the errors below');
       return;
@@ -268,7 +265,7 @@ const EditEvent = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         <span className="ml-3 text-gray-600">Loading event details...</span>
       </div>
     );
@@ -317,9 +314,8 @@ const EditEvent = () => {
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.title ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.title ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Enter event title"
               />
               {errors.title && (
@@ -339,9 +335,8 @@ const EditEvent = () => {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={4}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.description ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.description ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Describe the event, its purpose, and what attendees can expect..."
               />
               {errors.description && (
@@ -361,13 +356,12 @@ const EditEvent = () => {
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.category ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.category ? 'border-red-300' : 'border-gray-300'
+                    }`}
                 >
                   <option value="">Select Category</option>
                   {eventCategories.map(category => (
-                    <option key={category} value={category}>{category}</option>
+                    <option key={category.value} value={category.value}>{category.label}</option>
                   ))}
                 </select>
                 {errors.category && (
@@ -387,9 +381,8 @@ const EditEvent = () => {
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.location ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.location ? 'border-red-300' : 'border-gray-300'
+                    }`}
                   placeholder="e.g., Main Auditorium, Church Grounds"
                 />
                 {errors.location && (
@@ -432,9 +425,8 @@ const EditEvent = () => {
                 name="date"
                 value={formData.date}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.date ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.date ? 'border-red-300' : 'border-gray-300'
+                  }`}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -453,9 +445,8 @@ const EditEvent = () => {
                 name="time"
                 value={formData.time}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.time ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.time ? 'border-red-300' : 'border-gray-300'
+                  }`}
               />
               {errors.time && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -474,9 +465,8 @@ const EditEvent = () => {
                 name="endTime"
                 value={formData.endTime}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.endTime ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.endTime ? 'border-red-300' : 'border-gray-300'
+                  }`}
               />
               {errors.endTime && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -503,9 +493,8 @@ const EditEvent = () => {
                 onChange={handleInputChange}
                 min="1"
                 max="10000"
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.maxAttendees ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.maxAttendees ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Leave empty for no limit"
               />
               {errors.maxAttendees && (
@@ -522,7 +511,7 @@ const EditEvent = () => {
                 name="isRecurring"
                 checked={formData.isRecurring}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-indigo-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label className="ml-2 block text-sm text-gray-900">
                 This is a recurring event
@@ -538,9 +527,8 @@ const EditEvent = () => {
                   name="recurringPattern"
                   value={formData.recurringPattern}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.recurringPattern ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.recurringPattern ? 'border-red-300' : 'border-gray-300'
+                    }`}
                 >
                   <option value="">Select Pattern</option>
                   {recurringPatterns.map(pattern => (
@@ -569,9 +557,9 @@ const EditEvent = () => {
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">Current Image:</p>
                 <div className="relative inline-block">
-                  <img 
-                    src={existingImage} 
-                    alt="Current event image" 
+                  <img
+                    src={existingImage}
+                    alt="Current event image"
                     className="w-48 h-24 object-cover rounded-lg border border-gray-200"
                   />
                 </div>
@@ -597,9 +585,9 @@ const EditEvent = () => {
               <div className="mt-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">New Image Preview:</p>
                 <div className="relative inline-block">
-                  <img 
-                    src={imagePreview} 
-                    alt="New event preview" 
+                  <img
+                    src={imagePreview}
+                    alt="New event preview"
                     className="w-48 h-24 object-cover rounded-lg border border-gray-200"
                   />
                   <button
@@ -627,7 +615,7 @@ const EditEvent = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Event Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{originalData.currentAttendees || 0}</div>
+                <div className="text-2xl font-bold text-indigo-600">{originalData.currentAttendees || 0}</div>
                 <div className="text-sm text-gray-600">Current Attendees</div>
               </div>
               <div className="text-center">
@@ -638,7 +626,7 @@ const EditEvent = () => {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {originalData.maxAttendees 
+                  {originalData.maxAttendees
                     ? `${Math.round(((originalData.currentAttendees || 0) / originalData.maxAttendees) * 100)}%`
                     : 'No Limit'
                   }
@@ -661,7 +649,7 @@ const EditEvent = () => {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
           >
             {saving && (
               <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

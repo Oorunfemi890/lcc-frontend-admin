@@ -33,7 +33,12 @@ const MembersManagement = () => {
       const response = await membersAPI.getMembers();
 
       if (response.success) {
-        setMembers(response.data);
+        // Map backend 'active' field to frontend 'isActive' for consistency
+        const mappedMembers = response.data.map(member => ({
+          ...member,
+          isActive: member.active !== undefined ? member.active : member.isActive
+        }));
+        setMembers(mappedMembers);
       } else {
         toast.error(response.message);
       }
@@ -61,17 +66,28 @@ const MembersManagement = () => {
     }
   };
 
-  const handleStatusChange = async (memberId, newStatus) => {
+  const handleStatusChange = async (memberId, currentStatus) => {
     try {
-      const response = await membersAPI.updateMemberStatus(memberId, newStatus);
+      let response;
+
+      // If currently active, deactivate. If inactive, activate.
+      if (currentStatus) {
+        response = await membersAPI.deactivateMember(memberId);
+      } else {
+        response = await membersAPI.activateMember(memberId);
+      }
 
       if (response.success) {
+        // Update local state
         setMembers(prev =>
           prev.map(member =>
-            member.id === memberId ? { ...member, isActive: newStatus } : member
+            member.id === memberId ? { ...member, isActive: !currentStatus, active: !currentStatus } : member
           )
         );
-        toast.success(`Member status updated successfully`);
+        toast.success(response.message);
+
+        // Refresh the member list to get updated data
+        fetchMembers();
       } else {
         toast.error(response.message);
       }
@@ -90,8 +106,8 @@ const MembersManagement = () => {
       (member.phoneNumber?.includes(searchTerm));
 
     const matchesStatus = filterStatus === 'all' ||
-      (filterStatus === 'active' && member.active) ||
-      (filterStatus === 'inactive' && !member.active);
+      (filterStatus === 'active' && member.isActive) ||
+      (filterStatus === 'inactive' && !member.isActive);
 
     const matchesDepartment = filterDepartment === 'all' || member.membershipType === filterDepartment;
 
@@ -104,7 +120,7 @@ const MembersManagement = () => {
   const paginatedMembers = filteredMembers.slice(startIndex, startIndex + membersPerPage);
 
   // Get unique departments for filter
-  const departments = [...new Set(members.map(member => member.department))].filter(Boolean);
+  const departments = [...new Set(members.map(member => member.membershipType))].filter(Boolean);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -117,7 +133,7 @@ const MembersManagement = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         <span className="ml-3 text-gray-600">Loading members...</span>
       </div>
     );
@@ -133,7 +149,7 @@ const MembersManagement = () => {
         </div>
         <Link
           to="/members/new"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
         >
           <i className="ri-add-line mr-2"></i>
           Add New Member
@@ -145,7 +161,7 @@ const MembersManagement = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <i className="ri-group-line text-blue-600"></i>
+              <i className="ri-group-line text-indigo-600"></i>
             </div>
             <div className="ml-3">
               <p className="text-sm text-gray-600">Total Members</p>
@@ -281,8 +297,8 @@ const MembersManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        {member.avatar ? (
-                          <img src={member.avatar} alt={member.name} className="h-10 w-10 rounded-full" />
+                        {member.profilePicture ? (
+                          <img src={member.profilePicture} alt={`${member.firstName} ${member.lastName}`} className="h-10 w-10 rounded-full object-cover" />
                         ) : (
                           <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                             <i className="ri-user-line text-gray-500"></i>
@@ -290,13 +306,13 @@ const MembersManagement = () => {
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                        <div className="text-sm font-medium text-gray-900">{member.firstName} {member.lastName}</div>
                         <div className="text-sm text-gray-500">{member.occupation}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{member.department}</div>
+                    <div className="text-sm text-gray-900">{member.membershipType}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${member.isActive
@@ -310,7 +326,7 @@ const MembersManagement = () => {
                     <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => handleMemberClick(member.id)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-indigo-600 hover:text-blue-900"
                         title="View Details"
                       >
                         <i className="ri-eye-line"></i>
@@ -323,7 +339,7 @@ const MembersManagement = () => {
                         <i className="ri-edit-line"></i>
                       </Link>
                       <button
-                        onClick={() => handleStatusChange(member.id, !member.isActive)}
+                        onClick={() => handleStatusChange(member.id, member.isActive)}
                         className={`${member.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
                         title={member.isActive ? 'Deactivate' : 'Activate'}
                       >
@@ -388,7 +404,7 @@ const MembersManagement = () => {
                         key={i + 1}
                         onClick={() => setCurrentPage(i + 1)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          ? 'z-10 bg-blue-50 border-blue-500 text-indigo-600'
                           : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                           }`}
                       >
@@ -427,15 +443,15 @@ const MembersManagement = () => {
 
               <div className="space-y-4">
                 <div className="text-center">
-                  {selectedMember.avatar ? (
-                    <img src={selectedMember.avatar} alt={selectedMember.name} className="h-20 w-20 rounded-full mx-auto" />
+                  {selectedMember.profilePicture ? (
+                    <img src={selectedMember.profilePicture} alt={`${selectedMember.firstName} ${selectedMember.lastName}`} className="h-20 w-20 rounded-full mx-auto object-cover" />
                   ) : (
                     <div className="h-20 w-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto">
                       <i className="ri-user-line text-gray-500 text-2xl"></i>
                     </div>
                   )}
-                  <h4 className="mt-2 text-lg font-semibold text-gray-900">{selectedMember.name}</h4>
-                  <p className="text-sm text-gray-500">{selectedMember.position || selectedMember.occupation}</p>
+                  <h4 className="mt-2 text-lg font-semibold text-gray-900">{selectedMember.firstName} {selectedMember.lastName}</h4>
+                  <p className="text-sm text-gray-500">{selectedMember.occupation}</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
@@ -445,20 +461,31 @@ const MembersManagement = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Phone</label>
-                    <p className="text-sm text-gray-900">{selectedMember.phone}</p>
+                    <p className="text-sm text-gray-900">{selectedMember.phoneNumber}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Department</label>
-                    <p className="text-sm text-gray-900">{selectedMember.department}</p>
+                    <p className="text-sm text-gray-900">{selectedMember.membershipType}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Membership Date</label>
-                    <p className="text-sm text-gray-900">{formatDate(selectedMember.membershipDate)}</p>
+                    <p className="text-sm text-gray-900">{selectedMember.memberSince ? formatDate(selectedMember.memberSince) : 'N/A'}</p>
                   </div>
                   {selectedMember.address && (
                     <div>
                       <label className="text-sm font-medium text-gray-500">Address</label>
                       <p className="text-sm text-gray-900">{selectedMember.address}</p>
+                    </div>
+                  )}
+                  {selectedMember.resetOtp && (
+                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                      <label className="text-sm font-medium text-yellow-800">Current OTP</label>
+                      <p className="text-lg font-mono font-bold text-yellow-900">{selectedMember.resetOtp}</p>
+                      {selectedMember.resetOtpExpiry && (
+                        <p className="text-xs text-yellow-700 mt-1">
+                          Expires: {new Date(selectedMember.resetOtpExpiry).toLocaleString()}
+                        </p>
+                      )}
                     </div>
                   )}
                   <div>
@@ -475,7 +502,7 @@ const MembersManagement = () => {
                 <div className="flex space-x-3 pt-4">
                   <Link
                     to={`/members/${selectedMember.id}/edit`}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-center hover:bg-blue-700 transition-colors"
+                    className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-center hover:bg-indigo-700 transition-colors"
                     onClick={() => setShowMemberDetails(false)}
                   >
                     Edit Member

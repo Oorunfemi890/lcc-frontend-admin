@@ -16,7 +16,7 @@ const EventsManagement = () => {
     hasPrevPage: false,
     limit: 10
   });
-  
+
   const [filters, setFilters] = useState({
     page: 1,
     limit: 10,
@@ -43,7 +43,7 @@ const EventsManagement = () => {
     try {
       setLoading(true);
       const response = await eventsAPI.getEvents(filters);
-      
+
       if (response.success) {
         setEvents(response.data);
         if (response.pagination) {
@@ -65,7 +65,7 @@ const EventsManagement = () => {
   const fetchStats = async () => {
     try {
       const response = await eventsAPI.getEventsStats();
-      
+
       if (response.success) {
         setStats({
           totalEvents: response.data.totalEvents || 0,
@@ -82,7 +82,7 @@ const EventsManagement = () => {
   const handleEventClick = async (eventId) => {
     try {
       const response = await eventsAPI.getEventById(eventId);
-      
+
       if (response.success) {
         setSelectedEvent(response.data);
         setShowEventDetails(true);
@@ -98,10 +98,10 @@ const EventsManagement = () => {
   const handleStatusChange = async (eventId, newStatus) => {
     try {
       const response = await eventsAPI.updateEvent(eventId, { status: newStatus });
-      
+
       if (response.success) {
-        setEvents(prev => 
-          prev.map(event => 
+        setEvents(prev =>
+          prev.map(event =>
             event.id === eventId ? { ...event, status: newStatus } : event
           )
         );
@@ -123,11 +123,11 @@ const EventsManagement = () => {
 
     try {
       const response = await eventsAPI.deleteEvent(eventId);
-      
+
       if (response.success) {
         setEvents(prev => prev.filter(event => event.id !== eventId));
         toast.success('Event deleted successfully');
-        
+
         // Refresh data to update pagination
         await fetchEvents();
         await fetchStats();
@@ -143,7 +143,7 @@ const EventsManagement = () => {
   const handleDuplicate = async (eventId) => {
     try {
       const response = await eventsAPI.duplicateEvent(eventId);
-      
+
       if (response.success) {
         fetchEvents(); // Refresh the list
         toast.success('Event duplicated successfully');
@@ -189,7 +189,7 @@ const EventsManagement = () => {
       };
 
       const response = await eventsAPI.exportEvents(exportFilters);
-      
+
       if (response.success) {
         toast.success(response.message);
       } else {
@@ -240,7 +240,7 @@ const EventsManagement = () => {
   if (loading && filters.page === 1) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         <span className="ml-3 text-gray-600">Loading events...</span>
       </div>
     );
@@ -264,7 +264,7 @@ const EventsManagement = () => {
           </button>
           <Link
             to="/events/new"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <i className="ri-add-line mr-2"></i>
             Create Event
@@ -277,7 +277,7 @@ const EventsManagement = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <i className="ri-calendar-event-line text-blue-600"></i>
+              <i className="ri-calendar-event-line text-indigo-600"></i>
             </div>
             <div className="ml-3">
               <p className="text-sm text-gray-600">Total Events</p>
@@ -358,17 +358,14 @@ const EventsManagement = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Categories</option>
-              <option value="Service">Service</option>
-              <option value="Conference">Conference</option>
-              <option value="Seminar">Seminar</option>
-              <option value="Workshop">Workshop</option>
-              <option value="Outreach">Outreach</option>
-              <option value="Fellowship">Fellowship</option>
-              <option value="Youth Event">Youth Event</option>
-              <option value="Children Event">Children Event</option>
-              <option value="Prayer Meeting">Prayer Meeting</option>
-              <option value="Special Program">Special Program</option>
-              <option value="Other">Other</option>
+              <option value="youth">Youth</option>
+              <option value="children">Children</option>
+              <option value="bible_study">Bible Study</option>
+              <option value="sunday_fellowship">Sunday Fellowship</option>
+              <option value="outreach">Outreach</option>
+              <option value="prayer">Prayer</option>
+              <option value="special_event">Special Event</option>
+              <option value="ministry">Ministry</option>
             </select>
           </div>
           <div>
@@ -415,7 +412,7 @@ const EventsManagement = () => {
             </select>
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -447,10 +444,10 @@ const EventsManagement = () => {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
                         {event.image ? (
-                          <img 
-                            src={event.image} 
-                            alt={event.title} 
-                            className="h-12 w-12 rounded-lg object-cover" 
+                          <img
+                            src={event.image}
+                            alt={event.title}
+                            className="h-12 w-12 rounded-lg object-cover"
                           />
                         ) : (
                           <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -483,8 +480,8 @@ const EventsManagement = () => {
                     </div>
                     {event.maxAttendees && (
                       <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                        <div 
-                          className="bg-blue-600 h-1.5 rounded-full" 
+                        <div
+                          className="bg-indigo-600 h-1.5 rounded-full"
                           style={{
                             width: `${Math.min(100, ((event.currentAttendees || 0) / event.maxAttendees) * 100)}%`
                           }}
@@ -501,7 +498,7 @@ const EventsManagement = () => {
                     <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => handleEventClick(event.id)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-indigo-600 hover:text-blue-900"
                         title="View Details"
                       >
                         <i className="ri-eye-line text-lg"></i>
@@ -534,11 +531,10 @@ const EventsManagement = () => {
                                 key={status}
                                 onClick={() => handleStatusChange(event.id, status)}
                                 disabled={event.status === status}
-                                className={`block px-4 py-2 text-sm w-full text-left capitalize transition-colors ${
-                                  event.status === status 
-                                    ? 'text-gray-400 cursor-not-allowed' 
-                                    : 'text-gray-700 hover:bg-gray-100'
-                                }`}
+                                className={`block px-4 py-2 text-sm w-full text-left capitalize transition-colors ${event.status === status
+                                  ? 'text-gray-400 cursor-not-allowed'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                                  }`}
                               >
                                 Mark as {status}
                               </button>
@@ -564,7 +560,7 @@ const EventsManagement = () => {
         {/* Loading State for pagination */}
         {loading && filters.page > 1 && (
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
             <span className="ml-2 text-gray-600">Loading...</span>
           </div>
         )}
@@ -586,7 +582,7 @@ const EventsManagement = () => {
                 >
                   Previous
                 </button>
-                
+
                 {/* Page Numbers */}
                 <div className="flex items-center space-x-1">
                   {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
@@ -599,24 +595,23 @@ const EventsManagement = () => {
                       pageNum = start + i;
                       if (pageNum > end) return null;
                     }
-                    
+
                     return (
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
                         disabled={loading}
-                        className={`px-3 py-2 text-sm font-medium rounded-md ${
-                          pageNum === pagination.currentPage
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`px-3 py-2 text-sm font-medium rounded-md ${pageNum === pagination.currentPage
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {pageNum}
                       </button>
                     );
                   })}
                 </div>
-                
+
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={!pagination.hasNextPage || loading}
@@ -643,7 +638,7 @@ const EventsManagement = () => {
             {!filters.search && filters.status === 'all' && filters.category === 'all' && (
               <Link
                 to="/events/new"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <i className="ri-add-line mr-2"></i>
                 Create First Event
@@ -667,24 +662,24 @@ const EventsManagement = () => {
                   <i className="ri-close-line text-xl"></i>
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Event Information */}
                 <div className="space-y-4">
                   {selectedEvent.image && (
                     <div>
-                      <img 
-                        src={selectedEvent.image} 
-                        alt={selectedEvent.title} 
+                      <img
+                        src={selectedEvent.image}
+                        alt={selectedEvent.title}
                         className="w-full h-48 object-cover rounded-lg"
                       />
                     </div>
                   )}
-                  
+
                   <div>
                     <h4 className="text-xl font-semibold text-gray-900 mb-2">{selectedEvent.title}</h4>
                     <p className="text-gray-600 mb-4">{selectedEvent.description}</p>
-                    
+
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Date:</span>
@@ -744,7 +739,7 @@ const EventsManagement = () => {
                         <span className="font-medium text-gray-700 text-sm">Tags:</span>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {selectedEvent.tags.map((tag, index) => (
-                            <span 
+                            <span
                               key={index}
                               className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full"
                             >
@@ -763,7 +758,7 @@ const EventsManagement = () => {
                     <h4 className="text-lg font-semibold text-gray-900 mb-4">Attendance Information</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">{selectedEvent.currentAttendees || 0}</div>
+                        <div className="text-2xl font-bold text-indigo-600">{selectedEvent.currentAttendees || 0}</div>
                         <div className="text-sm text-gray-600">Current</div>
                       </div>
                       <div className="text-center">
@@ -773,7 +768,7 @@ const EventsManagement = () => {
                         <div className="text-sm text-gray-600">Maximum</div>
                       </div>
                     </div>
-                    
+
                     {selectedEvent.maxAttendees && (
                       <div className="mt-4">
                         <div className="flex justify-between text-sm text-gray-600 mb-1">
@@ -781,8 +776,8 @@ const EventsManagement = () => {
                           <span>{Math.round(((selectedEvent.currentAttendees || 0) / selectedEvent.maxAttendees) * 100)}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                          <div
+                            className="bg-indigo-600 h-2 rounded-full"
                             style={{
                               width: `${Math.min(100, ((selectedEvent.currentAttendees || 0) / selectedEvent.maxAttendees) * 100)}%`
                             }}
@@ -848,7 +843,7 @@ const EventsManagement = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-3 pt-6 mt-6 border-t">
                 <button
                   onClick={() => handleDuplicate(selectedEvent.id)}
@@ -859,7 +854,7 @@ const EventsManagement = () => {
                 </button>
                 <Link
                   to={`/events/${selectedEvent.id}/edit`}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
                   onClick={() => setShowEventDetails(false)}
                 >
                   <i className="ri-edit-line mr-2"></i>

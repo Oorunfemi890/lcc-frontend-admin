@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children, requiredPermission = null, requiredRoles = n
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Verifying authentication...</p>
         </div>
       </div>
@@ -43,7 +43,7 @@ const ProtectedRoute = ({ children, requiredPermission = null, requiredRoles = n
             </p>
             <button
               onClick={() => window.history.back()}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
             >
               <i className="ri-arrow-left-line mr-2"></i>
               Go Back
@@ -77,7 +77,7 @@ const ProtectedRoute = ({ children, requiredPermission = null, requiredRoles = n
             </p>
             <button
               onClick={() => window.history.back()}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
             >
               <i className="ri-arrow-left-line mr-2"></i>
               Go Back

@@ -223,7 +223,7 @@ const EditAttendance = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         <span className="ml-3 text-gray-600">Loading attendance record...</span>
       </div>
     );
@@ -429,7 +429,7 @@ const EditAttendance = () => {
               {/* Member List */}
               {loadingMembers ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
                   <p className="text-gray-600 mt-2">Loading members...</p>
                 </div>
               ) : (
@@ -444,7 +444,7 @@ const EditAttendance = () => {
                               type="checkbox"
                               checked={memberAttendance?.present || false}
                               onChange={(e) => handleMemberAttendanceChange(member.id, 'present', e.target.checked)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              className="h-4 w-4 text-indigo-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
                             <div className="ml-3">
                               <p className="text-sm font-medium text-gray-900">{member.name}</p>
@@ -490,7 +490,7 @@ const EditAttendance = () => {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
           >
             {saving && (
               <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
