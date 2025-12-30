@@ -256,7 +256,7 @@ const AdminLayout = () => {
                         My Profile
                       </Link>
                       <Link
-                        to="https://rccg-center.netlify.app/"
+                        to="https://www.libertychristiancentre.online/"
                         onClick={() => setProfileDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >

@@ -148,15 +148,16 @@ export const authAPI = {
   // Logout
   logout: async (refreshToken) => {
     try {
-      const response = await apiClient.post('/auth/logout', {}, {
-        headers: {
-          'Authorization': `Bearer ${refreshToken || localStorage.getItem('churchAdminRefreshToken')}`
-        }
-      });
+      // Commented out to prevent API call
+      // const response = await apiClient.post('/auth/logout', {}, {
+      //   headers: {
+      //     'Authorization': `Bearer ${refreshToken || localStorage.getItem('churchAdminRefreshToken')}`
+      //   }
+      // });
 
       return {
         success: true,
-        message: response.data?.message || 'Logged out successfully'
+        message: 'Logged out successfully'
       };
     } catch (error) {
       console.error('Logout error:', error);

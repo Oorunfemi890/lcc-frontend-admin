@@ -19,7 +19,7 @@ const Login = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/admin/dashboard';
+      const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, location]);
@@ -100,7 +100,7 @@ const Login = () => {
           }
         }
 
-        const from = location.state?.from?.pathname || '/admin/dashboard';
+        const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       }
     } catch (error) {

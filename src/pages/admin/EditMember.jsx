@@ -23,7 +23,8 @@ const EditMember = () => {
     active: true,
     emergencyContactName: '',
     emergencyContactPhone: '',
-    emergencyContactRelationship: ''
+    emergencyContactRelationship: '',
+    isWorker: false
   });
 
   const [profilePicture, setProfilePicture] = useState(null);
@@ -71,7 +72,8 @@ const EditMember = () => {
           active: member.active !== undefined ? member.active : true,
           emergencyContactName: member.emergencyContactName || '',
           emergencyContactPhone: member.emergencyContactPhone || '',
-          emergencyContactRelationship: member.emergencyContactRelationship || ''
+          emergencyContactRelationship: member.emergencyContactRelationship || '',
+          isWorker: member.isWorker || false
         });
       } else {
         toast.error(response.message);
@@ -533,6 +535,22 @@ const EditMember = () => {
                   <option key={dept} value={dept}>{dept}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="isWorker"
+                  checked={formData.isWorker}
+                  onChange={(e) => setFormData({ ...formData, isWorker: e.target.checked })}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Is Worker
+                  <span className="block text-xs text-gray-500 font-normal">Mark this member as a worker for follow-up assignments</span>
+                </span>
+              </label>
             </div>
 
             <div className="md:col-span-2">

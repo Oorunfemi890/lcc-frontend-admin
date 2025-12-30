@@ -11,7 +11,13 @@ const NewFollowUp = () => {
     const [step, setStep] = useState(1); // 1: Choose type, 2: Select person, 3: Message details
     const [followUpCategory, setFollowUpCategory] = useState(''); // 'individual' or 'group'
     const [individualType, setIndividualType] = useState(''); // 'first_timer' or 'member'
-    const [messageType, setMessageType] = useState(''); // 'phone_call', 'whatsapp', 'email', etc.
+    const [followUpMode, setFollowUpMode] = useState('digital'); // 'digital' or 'physical'
+    const [messageType, setMessageType] = useState([]); // Array of strings
+    const [workers, setWorkers] = useState([]); // Members who are workers
+
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [firstTimers, setFirstTimers] = useState([]);
     const [members, setMembers] = useState([]);
@@ -21,10 +27,11 @@ const NewFollowUp = () => {
 
     const [formData, setFormData] = useState({
         firstTimerId: '',
+        targetMemberId: '', // For existing members
         assignedToMemberId: '',
-        followUpType: '',
+        followUpType: '', // Unused in state, but used in submission
         scheduledDate: new Date().toISOString().split('T')[0],
-        notes: ''
+        notes: '' // Renamed to Message in UI
     });
 
     useEffect(() => {
@@ -33,23 +40,24 @@ const NewFollowUp = () => {
         } else if (step === 2 && individualType === 'member') {
             fetchMembers();
         }
+
+        // Fetch workers for assignment dropdown
+        if (step === 3) {
+            fetchWorkers();
+        }
     }, [step, individualType]);
 
     const fetchRecentFirstTimers = async () => {
         try {
             setLoading(true);
-            const response = await firstTimerAPI.getAll();
+            const params = { limit: 50 };
+            if (startDate) params.startDate = startDate;
+            if (endDate) params.endDate = endDate;
+            if (searchTerm) params.search = searchTerm;
+
+            const response = await firstTimerAPI.getAll(params);
             if (response.success && Array.isArray(response.data)) {
-                // Filter first timers from the last 2 weeks
-                const twoWeeksAgo = new Date();
-                twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-                const recentFirstTimers = response.data.filter(ft => {
-                    const createdDate = new Date(ft.createdAt);
-                    return createdDate >= twoWeeksAgo;
-                });
-
-                setFirstTimers(recentFirstTimers);
+                setFirstTimers(response.data);
             }
         } catch (error) {
             console.error('Error fetching first timers:', error);
@@ -62,7 +70,10 @@ const NewFollowUp = () => {
     const fetchMembers = async () => {
         try {
             setLoading(true);
-            const response = await membersAPI.getMembers();
+            const params = { limit: 50 };
+            if (searchTerm) params.search = searchTerm;
+
+            const response = await membersAPI.getMembers(params);
             if (response.success && Array.isArray(response.data)) {
                 setMembers(response.data);
             }
@@ -71,6 +82,18 @@ const NewFollowUp = () => {
             toast.error('Failed to load members');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchWorkers = async () => {
+        try {
+            // Fetch members who are workers
+            const response = await membersAPI.getMembers({ isWorker: true, limit: 100 });
+            if (response.success && Array.isArray(response.data)) {
+                setWorkers(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching workers:', error);
         }
     };
 
@@ -83,22 +106,44 @@ const NewFollowUp = () => {
 
     const handleIndividualTypeSelect = (type) => {
         setIndividualType(type);
+        setSearchTerm('');
         setStep(2);
     };
 
     const handlePersonSelect = (person) => {
         setSelectedPerson(person);
         if (individualType === 'first_timer') {
-            setFormData({ ...formData, firstTimerId: person.id });
+            setFormData({ ...formData, firstTimerId: person.id, targetMemberId: '' });
         } else {
-            setFormData({ ...formData, assignedToMemberId: person.id });
+            // Validate if we should use assignedToMemberId or targetMemberId?
+            // "Select Member" implies TARGET.
+            // "Assign To" implies WORKER.
+            // Previous logic was wrong, setting assignedToMemberId.
+            // Correct: Set targetMemberId.
+            setFormData({ ...formData, targetMemberId: person.id, firstTimerId: '' });
         }
         setStep(3);
     };
 
     const handleMessageTypeSelect = (type) => {
-        setMessageType(type);
-        setFormData({ ...formData, followUpType: type });
+        if (followUpMode === 'physical') {
+            // Physical mode: single selection only
+            setMessageType([type]);
+        } else {
+            // Digital mode: multi-selection
+            setMessageType(prev => {
+                if (prev.includes(type)) {
+                    return prev.filter(t => t !== type);
+                } else {
+                    return [...prev, type];
+                }
+            });
+        }
+    };
+
+    const handleModeChange = (mode) => {
+        setFollowUpMode(mode);
+        setMessageType([]); // Clear selections when switching modes
     };
 
     const handleSubmit = async (e) => {
@@ -106,7 +151,18 @@ const NewFollowUp = () => {
         setSubmitting(true);
 
         try {
-            const response = await followUpAPI.create(formData);
+            if (messageType.length === 0) {
+                toast.error('Please select at least one message type');
+                setSubmitting(false);
+                return;
+            }
+
+            // Single API call with followUpType as array
+            const response = await followUpAPI.create({
+                ...formData,
+                followUpType: messageType // Send array directly
+            });
+
             if (response.success) {
                 toast.success('Follow-up created successfully');
                 resetForm();
@@ -124,10 +180,12 @@ const NewFollowUp = () => {
         setStep(1);
         setFollowUpCategory('');
         setIndividualType('');
-        setMessageType('');
+        setFollowUpMode('digital');
+        setMessageType([]);
         setSelectedPerson(null);
         setFormData({
             firstTimerId: '',
+            targetMemberId: '',
             assignedToMemberId: '',
             followUpType: '',
             scheduledDate: new Date().toISOString().split('T')[0],
@@ -138,7 +196,7 @@ const NewFollowUp = () => {
     const goBack = () => {
         if (step === 3) {
             setStep(2);
-            setMessageType('');
+            setMessageType([]);
         } else if (step === 2) {
             setStep(1.5);
             setSelectedPerson(null);
@@ -241,7 +299,7 @@ const NewFollowUp = () => {
                                 <i className="ri-user-star-line text-3xl text-indigo-600"></i>
                                 <h3 className="ml-3 text-lg font-semibold text-gray-900">First Timer</h3>
                             </div>
-                            <p className="text-gray-600">Follow up with someone who visited in the last 2 weeks</p>
+                            <p className="text-gray-600">Follow up with a new first timer</p>
                         </button>
 
                         <button
@@ -262,8 +320,62 @@ const NewFollowUp = () => {
             {step === 2 && (
                 <div className="bg-white p-8 rounded-lg shadow-sm border">
                     <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                        {individualType === 'first_timer' ? 'Select First Timer (Last 2 Weeks)' : 'Select Member'}
+                        {individualType === 'first_timer' ? 'Select First Timer' : 'Select Member'}
                     </h2>
+
+                    {individualType === 'first_timer' && (
+                        <div className="flex flex-wrap gap-4 mb-6 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div className="flex-1 min-w-[200px]">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Search Name/Phone</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="Search by name, phone..."
+                                        className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+                                    />
+                                    <i className="ri-search-line absolute left-3 top-2.5 text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+                                />
+                            </div>
+                            <button
+                                onClick={fetchRecentFirstTimers}
+                                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors h-[38px]"
+                            >
+                                Filter
+                            </button>
+                            {(startDate || endDate) && (
+                                <button
+                                    onClick={() => {
+                                        setStartDate('');
+                                        setEndDate('');
+                                        // Note: Users needs to click Filter again to reset, or we could auto-fetch here but state update is async
+                                    }}
+                                    className="px-3 py-2 text-gray-600 hover:text-gray-900 text-sm"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
@@ -275,7 +387,31 @@ const NewFollowUp = () => {
                             {individualType === 'first_timer' && firstTimers.length === 0 && (
                                 <div className="text-center py-12 text-gray-500">
                                     <i className="ri-user-search-line text-5xl mb-3"></i>
-                                    <p>No first timers found in the last 2 weeks</p>
+                                    <p>No first timers found {startDate || endDate || searchTerm ? 'matching your filters' : ''}</p>
+                                </div>
+                            )}
+
+                            {individualType === 'member' && (
+                                <div className="flex gap-4 mb-6 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Search Member</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                placeholder="Search by name, email, phone..."
+                                                className="w-full pl-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+                                            />
+                                            <i className="ri-search-line absolute left-3 top-2.5 text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={fetchMembers}
+                                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors h-[38px]"
+                                    >
+                                        Search
+                                    </button>
                                 </div>
                             )}
 
@@ -347,17 +483,69 @@ const NewFollowUp = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Mode Toggle */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
+                                Follow-Up Method <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex gap-2 mb-4">
+                                <button
+                                    type="button"
+                                    onClick={() => handleModeChange('digital')}
+                                    className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${followUpMode === 'digital'
+                                        ? 'bg-indigo-600 text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                >
+                                    <i className="ri-smartphone-line mr-2"></i>
+                                    Digital Follow-Up
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleModeChange('physical')}
+                                    className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${followUpMode === 'physical'
+                                        ? 'bg-indigo-600 text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                >
+                                    <i className="ri-map-pin-line mr-2"></i>
+                                    Physical Visit
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Message Type Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-3">
-                                Message Type <span className="text-red-500">*</span>
+                                {followUpMode === 'digital' ? 'Select Channel(s)' : 'Select Visit Type'} <span className="text-red-500">*</span>
                             </label>
+                            <p className="text-xs text-gray-500 mb-3">
+                                {followUpMode === 'digital'
+                                    ? 'You can select multiple digital channels'
+                                    : 'Select one visit type (requires worker assignment)'}
+                            </p>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {[
+                                {followUpMode === 'digital' ? [
                                     { value: 'phone_call', icon: 'ri-phone-line', label: 'Phone Call' },
-                                    { value: 'whatsapp', icon: 'ri-whatsapp-line', label: 'WhatsApp' },
-                                    { value: 'email', icon: 'ri-mail-line', label: 'Email' },
                                     { value: 'sms', icon: 'ri-message-2-line', label: 'SMS' },
+                                    { value: 'whatsapp', icon: 'ri-whatsapp-line', label: 'WhatsApp' },
+                                    { value: 'email', icon: 'ri-mail-line', label: 'Email' }
+                                ].map(type => (
+                                    <button
+                                        key={type.value}
+                                        type="button"
+                                        onClick={() => handleMessageTypeSelect(type.value)}
+                                        className={`p-4 border-2 rounded-lg transition-all ${messageType.includes(type.value)
+                                            ? 'border-indigo-500 bg-indigo-50'
+                                            : 'border-gray-200 hover:border-indigo-300'
+                                            }`}
+                                    >
+                                        <i className={`${type.icon} text-2xl ${messageType.includes(type.value) ? 'text-indigo-600' : 'text-gray-600'}`}></i>
+                                        <p className={`mt-2 text-sm font-medium ${messageType.includes(type.value) ? 'text-indigo-900' : 'text-gray-700'}`}>
+                                            {type.label}
+                                        </p>
+                                    </button>
+                                )) : [
                                     { value: 'home_visit', icon: 'ri-home-4-line', label: 'Home Visit' },
                                     { value: 'church_visit', icon: 'ri-building-line', label: 'Church Visit' }
                                 ].map(type => (
@@ -365,13 +553,13 @@ const NewFollowUp = () => {
                                         key={type.value}
                                         type="button"
                                         onClick={() => handleMessageTypeSelect(type.value)}
-                                        className={`p-4 border-2 rounded-lg transition-all ${messageType === type.value
-                                                ? 'border-indigo-500 bg-indigo-50'
-                                                : 'border-gray-200 hover:border-indigo-300'
+                                        className={`p-4 border-2 rounded-lg transition-all ${messageType.includes(type.value)
+                                            ? 'border-indigo-500 bg-indigo-50'
+                                            : 'border-gray-200 hover:border-indigo-300'
                                             }`}
                                     >
-                                        <i className={`${type.icon} text-2xl ${messageType === type.value ? 'text-indigo-600' : 'text-gray-600'}`}></i>
-                                        <p className={`mt-2 text-sm font-medium ${messageType === type.value ? 'text-indigo-900' : 'text-gray-700'}`}>
+                                        <i className={`${type.icon} text-2xl ${messageType.includes(type.value) ? 'text-indigo-600' : 'text-gray-600'}`}></i>
+                                        <p className={`mt-2 text-sm font-medium ${messageType.includes(type.value) ? 'text-indigo-900' : 'text-gray-700'}`}>
                                             {type.label}
                                         </p>
                                     </button>
@@ -393,36 +581,42 @@ const NewFollowUp = () => {
                             />
                         </div>
 
-                        {/* Assign To (Optional for first timers) */}
-                        {individualType === 'first_timer' && (
-                            <div>
+                        {/* Assign To (Worker) - Only show for physical visits */}
+                        {followUpMode === 'physical' && (
+                            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Assign To (Worker)
+                                    Assign To (Worker) <span className="text-red-500">*</span>
                                 </label>
+                                <p className="text-xs text-gray-500 mb-2">Required for Physical Visits. The worker will receive a notification.</p>
                                 <select
                                     value={formData.assignedToMemberId}
                                     onChange={(e) => setFormData({ ...formData, assignedToMemberId: e.target.value })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    required={followUpMode === 'physical'}
                                 >
-                                    <option value="">Select Worker (Optional)</option>
-                                    {members.map(member => (
-                                        <option key={member.id} value={member.id}>
-                                            {member.firstName} {member.lastName}
+                                    <option value="">Select Worker</option>
+                                    {workers.map(worker => (
+                                        <option key={worker.id} value={worker.id}>
+                                            {worker.firstName} {worker.lastName} ({worker.membershipType})
                                         </option>
                                     ))}
                                 </select>
                             </div>
                         )}
 
-                        {/* Notes */}
+                        {/* Message / Notes */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Message (Content to Send) <span className="text-red-500">*</span></label>
+                            <p className="text-xs text-gray-500 mb-2">
+                                This message will be sent to the {followUpMode === 'physical' ? 'assigned worker' : 'recipient'} via the selected channels.
+                            </p>
                             <textarea
                                 value={formData.notes}
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                 rows="4"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="Add any notes about this follow-up..."
+                                placeholder="Enter the message content here..."
+                                required
                             ></textarea>
                         </div>
 
@@ -437,7 +631,7 @@ const NewFollowUp = () => {
                             </button>
                             <button
                                 type="submit"
-                                disabled={!messageType || submitting}
+                                disabled={messageType.length === 0 || submitting}
                                 className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {submitting ? 'Creating...' : 'Create Follow-Up'}
