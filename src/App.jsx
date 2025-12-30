@@ -23,6 +23,7 @@ import TestimoniesManagement from "./pages/admin/TestimoniesManagement";
 import ServicesManagement from "./pages/admin/ServicesManagement";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminManagement from "./pages/admin/AdminManagement";
+import Settings from "./pages/admin/Settings";
 
 // Additional Admin Components
 import NewMember from "./pages/admin/NewMember";
@@ -232,6 +233,16 @@ const AdminApp = () => (
                 element={
                   <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ADMIN']}>
                     <AdminManagement />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Settings Management - SUPER_ADMIN and ADMIN only */}
+              <Route
+                path="settings"
+                element={
+                  <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ADMIN']}>
+                    <Settings />
                   </ProtectedRoute>
                 }
               />

@@ -446,9 +446,9 @@ const AdminProfile = () => {
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
-              {admin?.avatar ? (
+              {admin?.member?.profilePicture || admin?.profilePicture || admin?.avatar ? (
                 <img
-                  src={admin.avatar}
+                  src={admin.member?.profilePicture || admin.profilePicture || admin.avatar}
                   alt={admin.name}
                   className="h-20 w-20 rounded-full object-cover ring-4 ring-gray-100"
                 />
