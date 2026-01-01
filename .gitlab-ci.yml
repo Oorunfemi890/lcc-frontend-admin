@@ -1,0 +1,348 @@
+stages:
+  - deploy-dev
+  - deploy-prod
+  - manage-prod
+
+variables:
+  # Node settings
+  NODE_VERSION: "20"
+  
+  # Firebase settings
+  FIREBASE_PROJECT_ID: $FIREBASE_PROJECT_ID
+  FIREBASE_HOSTING_SITE: $FIREBASE_HOSTING_SITE
+  
+  # Terraform settings
+  # Note: Pointing to the NEW admin terraform script location
+  TF_ROOT: ${CI_PROJECT_DIR}/../lcc-infrastructure/lcc-frontend-admin/scripts/terraform
+  TF_STATE_NAME: default
+  TF_CACHE_KEY: default
+  TF_ADDRESS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}
+
+# Cache configuration
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .terraform/
+
+# ==================== DEV DEPLOYMENT (Netlify) ====================
+deploy-dev:
+  stage: deploy-dev
+  image: node:20-alpine
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - echo "🚀 Triggering Netlify deployment for development..."
+    - echo "DEBUG - Hook URL length:" $(echo -n "$NETLIFY_BUILD_HOOK_ADMIN" | wc -c)
+    - echo "DEBUG - Hook URL:" "$NETLIFY_BUILD_HOOK_ADMIN"
+    - |
+      curl -X POST $NETLIFY_BUILD_HOOK_ADMIN \
+        -H "Content-Type: application/json" \
+        -d '{}'   
+    - echo "✅ Development deployment triggered on Netlify"
+  environment:
+    name: develop
+    url: $DEV_APP_URL
+  only:
+    - develop
+  when: manual
+
+# ==================== PRODUCTION DEPLOYMENT (Firebase) ====================
+# This job handles:
+# 1. Infrastructure planning with Terraform
+# 2. Infrastructure provisioning (with inline approval)
+# 3. Building the Vite application
+# 4. Deployment to Firebase Hosting
+deploy-prod:
+  stage: deploy-prod
+  image: node:20-alpine
+  before_script:
+    # Install required tools
+    - apk add --no-cache curl bash openjdk11-jre python3 py3-pip wget unzip
+    
+    # Install Terraform
+    - wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+    - unzip terraform_1.6.0_linux_amd64.zip
+    - mv terraform /usr/local/bin/
+    - terraform --version
+    
+    # Install gcloud SDK
+    - curl -sSL https://sdk.cloud.google.com | bash
+    - export PATH=$PATH:/root/google-cloud-sdk/bin
+    
+    # Install Firebase CLI
+    - npm install -g firebase-tools
+    
+    # Authenticate with Google Cloud
+    - echo $GCP_SERVICE_KEY | base64 -d > ${HOME}/gcp-key.json
+    - gcloud auth activate-service-account --key-file ${HOME}/gcp-key.json
+    - gcloud config set project $FIREBASE_PROJECT_ID
+    
+    # Authenticate with Firebase
+    - echo $FIREBASE_SERVICE_KEY | base64 -d > ${HOME}/firebase-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/firebase-key.json
+    
+  script:
+    # ========== STEP 1: TERRAFORM PLAN ==========
+    - echo "📋 Step 1/4 - Planning infrastructure changes..."
+    - mkdir -p terraform
+    - cp -r ../lcc-infrastructure/lcc-frontend-admin/scripts/terraform/* terraform/ || echo "Using local terraform files"
+    - cd terraform
+    
+    # Initialize Terraform with GitLab HTTP backend
+    - |
+      terraform init \
+        -backend-config="address=${TF_ADDRESS}" \
+        -backend-config="lock_address=${TF_ADDRESS}/lock" \
+        -backend-config="unlock_address=${TF_ADDRESS}/lock" \
+        -backend-config="username=gitlab-ci-token" \
+        -backend-config="password=${CI_JOB_TOKEN}" \
+        -backend-config="lock_method=POST" \
+        -backend-config="unlock_method=DELETE" \
+        -backend-config="retry_wait_min=5"
+    
+    # Create terraform.tfvars from environment variables
+    - |
+      cat > terraform.tfvars <<EOF
+      project_id = "$FIREBASE_PROJECT_ID"
+      region = "$GCP_REGION"
+      hosting_site_id = "$FIREBASE_HOSTING_SITE"
+      app_name = "lcc-frontend-admin"
+      EOF
+    
+    # Run terraform plan
+    - terraform plan -out=tfplan
+    - terraform show -json tfplan > plan.json
+    - echo "✅ Infrastructure plan created"
+    
+    # ========== STEP 2: TERRAFORM APPLY ==========
+    - echo "🚀 Step 2/4 - Provisioning infrastructure..."
+    - terraform apply -auto-approve tfplan
+    
+    # Export outputs for deployment
+    - terraform output -json > ../terraform-outputs.json
+    - cat ../terraform-outputs.json
+    
+    # Extract specific outputs
+    - export HOSTING_URL=$(terraform output -raw hosting_url)
+    - export HOSTING_SITE=$(terraform output -raw hosting_site_id)
+    - echo "HOSTING_URL=$HOSTING_URL" >> ../terraform.env
+    - echo "HOSTING_SITE=$HOSTING_SITE" >> ../terraform.env
+    - echo "✅ Infrastructure provisioned"
+    - echo "   Hosting Site=$HOSTING_SITE"
+    - echo "   Hosting URL=$HOSTING_URL"
+    - cd ..
+    
+    # ========== STEP 3: BUILD APPLICATION ==========
+    - echo "🔨 Step 3/4 - Building Vite application..."
+    - npm ci
+    - npm run build
+    - echo "✅ Application built successfully"
+    
+    # ========== STEP 4: DEPLOY TO FIREBASE ==========
+    - echo "🚢 Step 4/4 - Deploying to Firebase Hosting..."
+    - |
+      firebase deploy \
+        --only hosting \
+        --project $FIREBASE_PROJECT_ID
+    - echo "✅ Production deployment completed successfully"
+    - echo "🌐 Site URL=$HOSTING_URL"
+    
+  artifacts:
+    paths:
+      - terraform/tfplan
+      - terraform/plan.json
+      - terraform-outputs.json
+      - terraform.env
+      - dist/
+    expire_in: 30 days
+  environment:
+    name: production
+    url: https://$FIREBASE_HOSTING_SITE.web.app
+  only:
+    - main
+  when: manual  # Requires manual trigger to start deployment
+
+
+# ==================== ROLLBACK PRODUCTION ====================
+rollback-prod:
+  stage: manage-prod
+  image: node:20-alpine
+  before_script:
+    - apk add --no-cache curl bash openjdk11-jre
+    - npm install -g firebase-tools
+    - echo $FIREBASE_SERVICE_KEY | base64 -d > ${HOME}/firebase-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/firebase-key.json
+  script:
+    - echo "⏮️ Rolling back Firebase Hosting..."
+    - |
+      firebase hosting:clone \
+        $FIREBASE_HOSTING_SITE:$(firebase hosting:channel:list --site $FIREBASE_HOSTING_SITE --json | jq -r '.[1].name') \
+        $FIREBASE_HOSTING_SITE:live \
+        --project $FIREBASE_PROJECT_ID
+    - echo "✅ Rollback completed successfully"
+  environment:
+    name: production
+  only:
+    - main
+  when: manual
+
+
+# ==================== PREVIEW DEPLOYMENT ====================
+deploy-preview:
+  stage: manage-prod
+  image: node:20-alpine
+  before_script:
+    - apk add --no-cache curl bash openjdk11-jre
+    - npm install -g firebase-tools
+    - echo $FIREBASE_SERVICE_KEY | base64 -d > ${HOME}/firebase-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/firebase-key.json
+  script:
+    - echo "🔍 Creating preview deployment..."
+    - npm ci
+    - npm run build
+    - |
+      firebase hosting:channel:deploy preview-$CI_COMMIT_SHORT_SHA \
+        --site $FIREBASE_HOSTING_SITE \
+        --project $FIREBASE_PROJECT_ID \
+        --expires 7d
+    - echo "✅ Preview deployment created"
+    - echo "🌐 Preview URL=https://$FIREBASE_HOSTING_SITE--preview-$CI_COMMIT_SHORT_SHA.web.app"
+  environment:
+    name: preview/$CI_COMMIT_REF_NAME
+    url: https://$FIREBASE_HOSTING_SITE--preview-$CI_COMMIT_SHORT_SHA.web.app
+    on_stop: cleanup-preview
+  only:
+    - main
+  when: manual
+
+
+# ==================== CLEANUP PREVIEW ====================
+cleanup-preview:
+  stage: manage-prod
+  image: node:20-alpine
+  before_script:
+    - apk add --no-cache curl bash openjdk11-jre
+    - npm install -g firebase-tools
+    - echo $FIREBASE_SERVICE_KEY | base64 -d > ${HOME}/firebase-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/firebase-key.json
+  script:
+    - echo "🧹 Cleaning up preview deployment..."
+    - |
+      firebase hosting:channel:delete preview-$CI_COMMIT_SHORT_SHA \
+        --site $FIREBASE_HOSTING_SITE \
+        --project $FIREBASE_PROJECT_ID \
+        --force
+    - echo "✅ Preview deployment cleaned up"
+  environment:
+    name: preview/$CI_COMMIT_REF_NAME
+    action: stop
+  only:
+    - main
+  when: manual
+
+
+# ==================== COST CONTROL (Suspend/Resume) ====================
+suspend-prod:
+  stage: manage-prod
+  image: node:20-alpine
+  before_script:
+    - apk add --no-cache curl bash openjdk11-jre
+    - npm install -g firebase-tools
+    - echo $FIREBASE_SERVICE_KEY | base64 -d > ${HOME}/firebase-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/firebase-key.json
+  script:
+    - echo "⏸️ Suspending site (Disabling Firebase Hosting)..."
+    - |
+      firebase hosting:disable \
+        --site $FIREBASE_HOSTING_SITE \
+        --project $FIREBASE_PROJECT_ID \
+        --force
+    - echo "✅ Site suspended. It will return 404 Not Found."
+  environment:
+    name: production
+  only:
+    - main
+  when: manual
+
+resume-prod:
+  stage: manage-prod
+  image: node:20-alpine
+  before_script:
+    - apk add --no-cache curl bash openjdk11-jre jq
+    - npm install -g firebase-tools
+    - echo $FIREBASE_SERVICE_KEY | base64 -d > ${HOME}/firebase-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/firebase-key.json
+  script:
+    - echo "▶️ Resuming site (Restoring latest release)..."
+    - |
+      # Get the latest release version
+      LATEST_RELEASE=$(firebase hosting:releases:list --site $FIREBASE_HOSTING_SITE --project $FIREBASE_PROJECT_ID --json | jq -r '.[0].name')
+      echo "Restoring release: $LATEST_RELEASE"
+      
+      # Clone it back to live channel
+      firebase hosting:clone \
+        $LATEST_RELEASE \
+        $FIREBASE_HOSTING_SITE:live \
+        --project $FIREBASE_PROJECT_ID
+    - echo "✅ Site resumed. Public access restored."
+  environment:
+    name: production
+  only:
+    - main
+  when: manual
+
+
+# ==================== INFRASTRUCTURE DESTROY (Emergency) ====================
+terraform-destroy:
+  stage: manage-prod
+  image: 
+    name: hashicorp/terraform:1.6
+    entrypoint: [""]
+  before_script:
+    # Install gcloud SDK
+    - apk add --no-cache python3 py3-pip curl bash
+    - curl -sSL https://sdk.cloud.google.com | bash
+    - export PATH=$PATH:/root/google-cloud-sdk/bin
+    
+    # Authenticate with GCP
+    - echo $GCP_SERVICE_KEY | base64 -d > ${HOME}/gcp-key.json
+    - gcloud auth activate-service-account --key-file ${HOME}/gcp-key.json
+    - gcloud config set project $FIREBASE_PROJECT_ID
+    
+    # Setup terraform
+    - mkdir -p terraform
+    - cp -r ../lcc-infrastructure/lcc-frontend-admin/scripts/terraform/* terraform/ || echo "Using local terraform files"
+    - cd terraform
+    
+    # Initialize Terraform
+    - terraform init \
+        -backend-config="address=${TF_ADDRESS}" \
+        -backend-config="lock_address=${TF_ADDRESS}/lock" \
+        -backend-config="unlock_address=${TF_ADDRESS}/lock" \
+        -backend-config="username=gitlab-ci-token" \
+        -backend-config="password=${CI_JOB_TOKEN}" \
+        -backend-config="lock_method=POST" \
+        -backend-config="unlock_method=DELETE" \
+        -backend-config="retry_wait_min=5"
+  script:
+    - cd terraform
+    # Create terraform.tfvars
+    - |
+      cat > terraform.tfvars <<EOF
+      project_id = "$FIREBASE_PROJECT_ID"
+      region = "$GCP_REGION"
+      hosting_site_id = "$FIREBASE_HOSTING_SITE"
+      app_name = "lcc-frontend-admin"
+      EOF
+    
+    # Destroy infrastructure
+    - echo "⚠️ DESTROYING ALL INFRASTRUCTURE ⚠️"
+    - terraform destroy -auto-approve
+    - echo "✅ Infrastructure destroyed"
+  environment:
+    name: production-infrastructure
+    action: stop
+  only:
+    - main
+  when: manual
