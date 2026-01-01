@@ -34,7 +34,6 @@ deploy-dev:
   script:
     - echo "🚀 Triggering Netlify deployment for development..."
     - echo "DEBUG - Hook URL length:" $(echo -n "$NETLIFY_BUILD_HOOK_ADMIN" | wc -c)
-    - echo "DEBUG - Hook URL:" "$NETLIFY_BUILD_HOOK_ADMIN"
     - |
       curl -X POST $NETLIFY_BUILD_HOOK_ADMIN \
         -H "Content-Type: application/json" \
