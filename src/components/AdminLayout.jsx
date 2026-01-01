@@ -263,7 +263,7 @@ const AdminLayout = () => {
                         My Profile
                       </Link>
                       <Link
-                        to="https://www.libertychristiancentre.online/"
+                        to={import.meta.env.VITE_WEBSITE_URL}
                         onClick={() => setProfileDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
