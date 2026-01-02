@@ -59,9 +59,9 @@ export const settingsAPI = {
     },
 
     // Patch existing setting
-    patchSetting: async (key, value) => {
+    patchSetting: async (key, data) => {
         try {
-            const response = await apiClient.patch(`/settings/${key}`, { value });
+            const response = await apiClient.patch(`/settings/${key}`, data);
             return {
                 success: true,
                 message: response.data.message,
