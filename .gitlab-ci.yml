@@ -88,7 +88,19 @@ deploy-dev:
         if [ "$DEPLOY_STATE" = "ready" ]; then
           echo "✅ Deployment succeeded!"
           DEPLOY_URL=$(echo $DEPLOY_RESPONSE | jq -r '.[0].deploy_ssl_url')
-          echo "🌐 Site URL: $DEPLOY_URL"
+          echo "🌐 Preview URL: $DEPLOY_URL"
+          
+          echo "📤 Auto-publishing deployment..."
+          PUBLISH_RESPONSE=$(curl -X POST -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys/$DEPLOY_ID/restore")
+          
+          if [ "$PUBLISH_RESPONSE" = "200" ]; then
+             echo "✅ Deployment published successfully!"
+          else
+             echo "⚠️ Publishing failed with status $PUBLISH_RESPONSE. Please check Netlify."
+             exit 1
+          fi
+          
           exit 0
         elif [ "$DEPLOY_STATE" = "error" ]; then
           echo "❌ Deployment failed!"
