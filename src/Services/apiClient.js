@@ -3,7 +3,15 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // Base URL for your backend API
-const BASE_URL = import.meta.env.VITE_BASE_URL + "/api/v1";
+// Base URL for your backend API
+let envBaseUrl = import.meta.env.VITE_BASE_URL;
+
+// Ensure URL has protocol to prevent relative path issues
+if (envBaseUrl && !envBaseUrl.startsWith('http://') && !envBaseUrl.startsWith('https://')) {
+  envBaseUrl = `https://${envBaseUrl}`;
+}
+
+const BASE_URL = envBaseUrl + "/api/v1";
 
 // Create axios instance
 export const apiClient = axios.create({
