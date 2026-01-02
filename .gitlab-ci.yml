@@ -86,7 +86,7 @@ deploy-dev:
         
         # Check if deployment is complete
         if [ "$DEPLOY_STATE" = "ready" ]; then
-          echo "✅ Deployment succeeded!"
+          echo "✅ Deployment succeeded!!!"
           DEPLOY_URL=$(echo $DEPLOY_RESPONSE | jq -r '.[0].deploy_ssl_url')
           echo "🌐 Preview URL: $DEPLOY_URL"
           
