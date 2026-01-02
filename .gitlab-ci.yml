@@ -54,10 +54,20 @@ deploy-dev:
         # Get latest deployment
         DEPLOY_RESPONSE=$(curl -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
           "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys?per_page=1")
+          
+        # Debug: Check if response is valid JSON array
+        IS_ARRAY=$(echo "$DEPLOY_RESPONSE" | jq -r 'if type=="array" then "yes" else "no" end' 2>/dev/null)
         
-        DEPLOY_ID=$(echo $DEPLOY_RESPONSE | jq -r '.[0].id')
-        DEPLOY_STATE=$(echo $DEPLOY_RESPONSE | jq -r '.[0].state')
-        DEPLOY_CONTEXT=$(echo $DEPLOY_RESPONSE | jq -r '.[0].context')
+        if [ "$IS_ARRAY" != "yes" ]; then
+           echo "⚠️ Unexpected API Response (Not an array):"
+           echo "$DEPLOY_RESPONSE" | jq '.'
+           echo "Possible causes: Invalid Site ID, Bad URL, or Auth failure"
+           exit 1
+        fi
+        
+        DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.[0].id')
+        DEPLOY_STATE=$(echo "$DEPLOY_RESPONSE" | jq -r '.[0].state')
+        DEPLOY_CONTEXT=$(echo "$DEPLOY_RESPONSE" | jq -r '.[0].context')
         
         echo "📊 Deployment $DEPLOY_ID status: $DEPLOY_STATE"
         
