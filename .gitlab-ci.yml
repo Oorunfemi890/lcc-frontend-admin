@@ -44,6 +44,22 @@ deploy-dev:
     - echo "🚀 Triggering Netlify deployment..."
     - 'curl -X POST "$NETLIFY_BUILD_HOOK_ADMIN" -H "Content-Type: application/json" -d "{}"'
     
+    # Validation: Verify Token and Site ID
+    - echo "🔍 Verifying credentials..."
+    - |
+      USER_CHECK=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/user")
+      if [ "$USER_CHECK" != "200" ]; then
+        echo "❌ Authentication Failed! The NETLIFY_AUTH_TOKEN is invalid (HTTP $USER_CHECK)."
+        exit 1
+      fi
+      
+      SITE_CHECK=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID")
+      if [ "$SITE_CHECK" != "200" ]; then
+        echo "❌ Site Access Failed! The NETLIFY_SITE_ID seems incorrect or the token doesn't have access to it (HTTP $SITE_CHECK)."
+        exit 1
+      fi
+      echo "✅ Credentials verified."
+
     # Step 2: Get the latest deployment for this site
     - echo "⏳ Waiting for deployment to start..."
     - sleep 10  # Give Netlify time to start the build
