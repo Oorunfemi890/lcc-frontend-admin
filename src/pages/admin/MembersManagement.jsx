@@ -55,7 +55,10 @@ const MembersManagement = () => {
       const response = await membersAPI.getMemberById(memberId);
 
       if (response.success) {
-        setSelectedMember(response.data);
+        setSelectedMember({
+          ...response.data,
+          isActive: response.data.active !== undefined ? response.data.active : response.data.isActive
+        });
         setShowMemberDetails(true);
       } else {
         toast.error(response.message);
