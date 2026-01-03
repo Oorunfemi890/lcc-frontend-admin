@@ -34,6 +34,51 @@ const Settings = () => {
         return { label, icon };
     };
 
+    useEffect(() => {
+        fetchSettings();
+    }, []);
+
+    const fetchSettings = async () => {
+        setLoading(true);
+        const response = await settingsAPI.getSettings();
+        if (response.success) {
+            setSettings(response.data);
+        } else {
+            toast.error(response.message);
+        }
+        setLoading(false);
+    };
+
+    const handleToggle = async (key, currentActive) => {
+        // Optimistic update
+        const newActive = !currentActive;
+
+        setSettings(prev => ({
+            ...prev,
+            [key]: {
+                ...prev[key],
+                active: newActive
+            }
+        }));
+
+        // API call using patchSetting
+        const response = await settingsAPI.patchSetting(key, { active: newActive });
+
+        if (response.success) {
+            toast.success('Setting updated');
+        } else {
+            // Revert on failure
+            setSettings(prev => ({
+                ...prev,
+                [key]: {
+                    ...prev[key],
+                    active: currentActive
+                }
+            }));
+            toast.error('Failed to update setting');
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
