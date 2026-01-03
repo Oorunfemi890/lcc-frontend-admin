@@ -30,15 +30,96 @@ deploy-dev:
   stage: deploy-dev
   image: node:20-alpine
   before_script:
-    - apk add --no-cache curl
+    - apk add --no-cache curl jq
   script:
-    - echo "🚀 Triggering Netlify deployment for development..."
-    - echo "DEBUG - Hook URL length:" $(echo -n "$NETLIFY_BUILD_HOOK_ADMIN" | wc -c)
+
+    # Step 1: Trigger the build hook
+    - echo "🚀 Triggering Netlify deployment..."
+    - 'curl -X POST "$NETLIFY_BUILD_HOOK_ADMIN" -H "Content-Type: application/json" -d "{}"'
+    
+    # Validation: Verify Token and Site ID
+    - echo "🔍 Verifying credentials..."
     - |
-      curl -X POST $NETLIFY_BUILD_HOOK_ADMIN \
-        -H "Content-Type: application/json" \
-        -d '{}'   
-    - echo "✅ Development deployment triggered on Netlify"
+      USER_CHECK=$(curl -s -X GET -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/user")
+      if [ "$USER_CHECK" != "200" ]; then
+        echo "❌ Authentication Failed! The NETLIFY_AUTH_TOKEN is invalid (HTTP $USER_CHECK)."
+        exit 1
+      fi
+      
+      SITE_CHECK=$(curl -s -X GET -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID")
+      if [ "$SITE_CHECK" != "200" ]; then
+        echo "❌ Site Access Failed! The NETLIFY_SITE_ID seems incorrect or the token doesn't have access to it (HTTP $SITE_CHECK)."
+        exit 1
+      fi
+      echo "✅ Credentials verified."
+
+    # Step 2: Get the latest deployment for this site
+    - echo "⏳ Waiting for deployment to start..."
+    - sleep 10  # Give Netlify time to start the build
+    
+    # Step 3: Poll for deployment status
+    - |
+      DEPLOY_ID=""
+      MAX_ATTEMPTS=60
+      ATTEMPT=0
+      
+      while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+        # Get latest deployment
+        DEPLOY_RESPONSE=$(curl -X GET -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+          "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys?per_page=1")
+          
+        # Debug: Check if response is valid JSON array
+        IS_ARRAY=$(echo "$DEPLOY_RESPONSE" | jq -r 'if type=="array" then "yes" else "no" end' 2>/dev/null)
+        
+        if [ "$IS_ARRAY" != "yes" ]; then
+           echo "⚠️ Unexpected API Response (Not an array):"
+           echo "$DEPLOY_RESPONSE" | jq '.'
+           echo "Possible causes: Invalid Site ID, Bad URL, or Auth failure"
+           exit 1
+        fi
+        
+        DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.[0].id')
+        DEPLOY_STATE=$(echo "$DEPLOY_RESPONSE" | jq -r '.[0].state')
+        DEPLOY_CONTEXT=$(echo "$DEPLOY_RESPONSE" | jq -r '.[0].context')
+        
+        echo "📊 Deployment $DEPLOY_ID status: $DEPLOY_STATE"
+        
+        # Check if deployment is complete
+        if [ "$DEPLOY_STATE" = "ready" ]; then
+          echo "✅ Deployment succeeded!!!"
+          DEPLOY_URL=$(echo $DEPLOY_RESPONSE | jq -r '.[0].deploy_ssl_url')
+          echo "🌐 Preview URL: $DEPLOY_URL"
+          
+          echo "📤 Auto-publishing deployment..."
+          PUBLISH_RESPONSE=$(curl -X POST -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys/$DEPLOY_ID/restore")
+          
+          if [ "$PUBLISH_RESPONSE" = "200" ]; then
+             echo "✅ Deployment published successfully!"
+          else
+             echo "⚠️ Publishing failed with status $PUBLISH_RESPONSE. Please check Netlify."
+             exit 1
+          fi
+          
+          exit 0
+        elif [ "$DEPLOY_STATE" = "error" ]; then
+          echo "❌ Deployment failed!"
+          
+          # Fetch and display build logs
+          echo "📋 Build logs:"
+          curl -X GET -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/deploys/$DEPLOY_ID/log" | jq -r '.[]'
+          
+          exit 1
+        fi
+        
+        # Wait before next check
+        sleep 10
+        ATTEMPT=$((ATTEMPT + 1))
+      done
+      
+      echo "⏱️ Deployment timeout - exceeded maximum wait time"
+      exit 1
   environment:
     name: develop
     url: $DEV_APP_URL
